@@ -28,7 +28,7 @@ return {
       window = {
         width = 20,
         position = 'right',
-        auto_expand_width = true,
+        auto_expand_width = false,
         mappings = {
           ['\\'] = 'close_window',
         },
