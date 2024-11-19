@@ -16,6 +16,11 @@ return {
   opts = {
     filesystem = {
       filtered_items = {
+        bind_to_cwd = true,
+        cwd_target = {
+          sidebar = 'global', -- sidebar is when position = left or right
+          current = 'window', -- current is when position = current
+        },
         visible = true, -- This is what you want: If you set this to `true`, all "hide" just mean "dimmed out"
         hide_dotfiles = false,
         hide_gitignored = false,
