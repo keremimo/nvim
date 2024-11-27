@@ -71,3 +71,8 @@ vim.api.nvim_create_autocmd('FileType', {
 })
 vim.opt.foldcolumn = '0'
 vim.opt.foldmethod = 'manual'
+
+vim.o.expandtab = true
+vim.o.smartindent = true
+vim.o.tabstop = 2
+vim.o.shiftwidth = 2
