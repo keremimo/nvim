@@ -67,7 +67,7 @@ vim.opt.cursorline = true
 vim.opt.scrolloff = 10
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'go',
-  command = 'setlocal tabstop=4 shiftwidth=4 expandtab',
+  command = 'setlocal tabstop=2 shiftwidth=2 expandtab',
 })
 vim.opt.foldcolumn = '0'
 vim.opt.foldmethod = 'manual'
