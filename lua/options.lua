@@ -38,7 +38,7 @@ vim.opt.ignorecase = true
 vim.opt.smartcase = true
 
 -- Keep signcolumn on by default
-vim.opt.signcolumn = 'yes'
+vim.opt.signcolumn = 'no'
 
 -- Decrease update time
 vim.opt.updatetime = 250
@@ -76,3 +76,7 @@ vim.o.expandtab = true
 vim.o.smartindent = true
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
+
+vim.opt.termguicolors = false
+vim.opt.spell = false
+vim.cmd [[colorscheme vim]]
