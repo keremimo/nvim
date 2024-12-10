@@ -415,6 +415,8 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      local nvim_lsp = require 'lspconfig'
+
       local servers = {
         -- clangd = {},
         -- gopls = {},
@@ -428,7 +430,6 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
-
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -438,13 +439,57 @@ require('lazy').setup({
               completion = {
                 callSnippet = 'Replace',
               },
+              solargraph = {},
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
             },
           },
         },
       }
-
+      local handlers = {
+        ['textDocument/publishDiagnostics'] = vim.lsp.with(vim.lsp.diagnostic.on_publish_diagnostics, {
+          virtual_text = true,
+        }),
+      }
+      nvim_lsp.solargraph.setup {
+        cmd = {
+          'rvm',
+          '@global',
+          'do',
+          'solargraph',
+          'stdio',
+        },
+        filetypes = {
+          'ruby',
+        },
+        flags = {
+          debounce_text_changes = 150,
+        },
+        --on_attach = on_attach,
+        root_dir = nvim_lsp.util.root_pattern('Gemfile', '.git', '.'),
+        capabilities = capabilities,
+        handlers = handlers,
+        settings = {
+          solargraph = {
+            completion = true,
+            autoformat = false,
+            formatting = true,
+            symbols = true,
+            definitions = true,
+            references = true,
+            folding = true,
+            highlights = true,
+            diagnostics = true,
+            rename = true,
+            -- Enable this when running with docker compose
+            --transport = 'external',
+            --externalServer = {
+            --    host = 'localhost',
+            --    port = '7658',
+            --}
+          },
+        },
+      }
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install
       --  other tools, you can run
@@ -536,9 +581,9 @@ require('lazy').setup({
   --         return 'make install_jsregexp'
   --       end)(),
   --       dependencies = {
-  -- `friendly-snippets` contains a variety of premade snippets.
-  -- See the README about individual language/framework/plugin snippets:
-  -- https://github.com/rafamadriz/friendly-snippets
+  -- --`friendly-snippets` contains a variety of premade snippets.
+  -- --See the README about individual language/framework/plugin snippets:
+  -- --https://github.com/rafamadriz/friendly-snippets
   --       },
   --     },
   --     'saadparwaiz1/cmp_luasnip',
@@ -693,7 +738,8 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'ruby', 'vim', 'vimdoc' },
+      dependencies = { 'RRethy/nvim-treesitter-endwise' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
