@@ -430,6 +430,7 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
+
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -439,7 +440,8 @@ require('lazy').setup({
               completion = {
                 callSnippet = 'Replace',
               },
-              solargraph = {},
+              -- solargraph = {},
+              ruby_lsp = {},
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
             },
@@ -451,45 +453,45 @@ require('lazy').setup({
           virtual_text = true,
         }),
       }
-      nvim_lsp.solargraph.setup {
-        cmd = {
-          'rvm',
-          '@global',
-          'do',
-          'solargraph',
-          'stdio',
-        },
-        filetypes = {
-          'ruby',
-        },
-        flags = {
-          debounce_text_changes = 150,
-        },
-        --on_attach = on_attach,
-        root_dir = nvim_lsp.util.root_pattern('Gemfile', '.git', '.'),
-        capabilities = capabilities,
-        handlers = handlers,
-        settings = {
-          solargraph = {
-            completion = true,
-            autoformat = false,
-            formatting = true,
-            symbols = true,
-            definitions = true,
-            references = true,
-            folding = true,
-            highlights = true,
-            diagnostics = true,
-            rename = true,
-            -- Enable this when running with docker compose
-            --transport = 'external',
-            --externalServer = {
-            --    host = 'localhost',
-            --    port = '7658',
-            --}
-          },
-        },
-      }
+      -- nvim_lsp.solargraph.setup {
+      --   cmd = {
+      --     'rvm',
+      --     '@global',
+      --     'do',
+      --     'solargraph',
+      --     'stdio',
+      --   },
+      --   filetypes = {
+      --     'ruby',
+      --   },
+      --   flags = {
+      --     debounce_text_changes = 150,
+      --   },
+      --   --on_attach = on_attach,
+      --   root_dir = nvim_lsp.util.root_pattern('Gemfile', '.git', '.'),
+      --   capabilities = capabilities,
+      --   handlers = handlers,
+      --   settings = {
+      --     solargraph = {
+      --       completion = true,
+      --       autoformat = false,
+      --       formatting = true,
+      --       symbols = true,
+      --       definitions = true,
+      --       references = true,
+      --       folding = true,
+      --       highlights = true,
+      --       diagnostics = true,
+      --       rename = true,
+      --       -- Enable this when running with docker compose
+      --       --transport = 'external',
+      --       --externalServer = {
+      --       --    host = 'localhost',
+      --       --    port = '7658',
+      --       --}
+      --     },
+      --   },
+      -- }
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install
       --  other tools, you can run
@@ -536,6 +538,12 @@ require('lazy').setup({
       },
     },
     opts = {
+      servers = {
+        ruby_lsp = {
+          mason = false,
+          cmd = { vim.fn.expand '~/.rbenv/shims/ruby-lsp' },
+        },
+      },
       notify_on_error = false,
       format_on_save = function(bufnr)
         -- Disable "format_on_save lsp_fallback" for languages that don't
