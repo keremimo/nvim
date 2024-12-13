@@ -77,6 +77,6 @@ vim.o.smartindent = true
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 
-vim.opt.termguicolors = false
+-- vim.opt.termguicolors = false
 vim.opt.spell = false
-vim.cmd [[colorscheme vim]]
+-- vim.cmd [[colorscheme vim]]
