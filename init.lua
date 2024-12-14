@@ -416,6 +416,12 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local nvim_lsp = require 'lspconfig'
+      nvim_lsp.ruby_lsp.setup({
+  init_options = {
+    formatter = 'standard',
+    linters = { 'standard' },
+  },
+})
 
       local servers = {
         -- clangd = {},
@@ -441,7 +447,6 @@ require('lazy').setup({
                 callSnippet = 'Replace',
               },
               -- solargraph = {},
-              ruby_lsp = {},
               -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
               -- diagnostics = { disable = { 'missing-fields' } },
             },
@@ -538,12 +543,6 @@ require('lazy').setup({
       },
     },
     opts = {
-      servers = {
-        ruby_lsp = {
-          mason = false,
-          cmd = { vim.fn.expand '~/.rbenv/shims/ruby-lsp' },
-        },
-      },
       notify_on_error = false,
       format_on_save = function(bufnr)
         -- Disable "format_on_save lsp_fallback" for languages that don't
