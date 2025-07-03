@@ -416,12 +416,12 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local nvim_lsp = require 'lspconfig'
-      nvim_lsp.ruby_lsp.setup({
-  init_options = {
-    formatter = 'standard',
-    linters = { 'standard' },
-  },
-})
+      nvim_lsp.ruby_lsp.setup {
+        init_options = {
+          formatter = 'standard',
+          linters = { 'standard' },
+        },
+      }
 
       local servers = {
         -- clangd = {},
@@ -562,6 +562,8 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        eruby = { 'erb_format' },
+        ruby = { 'rubocop' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -712,6 +714,8 @@ require('lazy').setup({
       --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
       --  - ci'  - [C]hange [I]nside [']quote
       require('mini.ai').setup { n_lines = 500 }
+
+      require('mini.diff').setup()
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       --
