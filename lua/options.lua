@@ -82,3 +82,4 @@ vim.o.shiftwidth = 2
 -- vim.opt.termguicolors = false
 vim.opt.spell = false
 -- vim.cmd [[colorscheme vim]]
+vim.opt.mousemodel = 'extend'
