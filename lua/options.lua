@@ -21,7 +21,7 @@ vim.schedule(function()
   vim.opt.clipboard = 'unnamedplus'
 end)
 
-vim.diagnostic.config { virtual_text = false, virtual_lines = { current_line = true } }
+vim.diagnostic.config { virtual_text = false, virtual_lines = true }
 
 -- Global statusbar
 vim.opt.laststatus = 3
@@ -76,8 +76,12 @@ vim.opt.foldmethod = 'manual'
 
 vim.o.expandtab = true
 vim.o.smartindent = true
-vim.o.tabstop = 2
-vim.o.shiftwidth = 2
+local tab_width = 2
+vim.o.tabstop = tab_width
+vim.o.softtabstop = tab_width
+vim.o.shiftwidth = tab_width
+vim.o.smarttab = true
+vim.o.termguicolors = true
 
 -- vim.opt.termguicolors = false
 vim.opt.spell = false
