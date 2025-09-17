@@ -30,3 +30,18 @@ vim.keymap.set('n', '<C-e>', '<Cmd>Neotree toggle<CR>', { silent = true })
 vim.keymap.set('n', '<C-q>', '<Cmd>:q<CR>', { silent = true })
 vim.keymap.set({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>:w<CR><ESC>', { silent = true })
 vim.keymap.set('n', '<C-g>', '<Cmd>:LazyGit<CR>', { silent = true })
+
+-- Normal/visual/operator-pending: remap jkl; to hjkl
+vim.keymap.set('', 'j', 'h', { noremap = true, silent = true })
+vim.keymap.set('', 'k', 'j', { noremap = true, silent = true })
+vim.keymap.set('', 'l', 'k', { noremap = true, silent = true })
+vim.keymap.set('', ';', 'l', { noremap = true, silent = true })
+
+-- Disable old hjkl
+vim.keymap.set('', 'h', '<Nop>', { noremap = true, silent = true })
+
+-- Insert mode: Alt + jkl; for movement
+vim.keymap.set('i', '<A-j>', '<Left>', { noremap = true, silent = true })
+vim.keymap.set('i', '<A-k>', '<Down>', { noremap = true, silent = true })
+vim.keymap.set('i', '<A-l>', '<Up>', { noremap = true, silent = true })
+vim.keymap.set('i', '<A-;>', '<Right>', { noremap = true, silent = true })
