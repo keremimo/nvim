@@ -30,6 +30,7 @@ vim.keymap.set('n', '<C-e>', '<Cmd>Neotree toggle<CR>', { silent = true })
 vim.keymap.set('n', '<C-q>', '<Cmd>:q<CR>', { silent = true })
 vim.keymap.set({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>:w<CR><ESC>', { silent = true })
 vim.keymap.set('n', '<C-g>', '<Cmd>:LazyGit<CR>', { silent = true })
+vim.keymap.set('n', '<leader>rr', '<Cmd>RunCode<CR>', { silent = true })
 
 -- Normal/visual/operator-pending: remap jkl; to hjkl
 vim.keymap.set('', 'j', 'h', { noremap = true, silent = true })
