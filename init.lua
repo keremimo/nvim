@@ -412,14 +412,6 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
-      local nvim_lsp = require 'lspconfig'
-      nvim_lsp.ruby_lsp.setup {
-        init_options = {
-          formatter = 'standard',
-          linters = { 'standard' },
-        },
-      }
-
       local servers = {
         -- clangd = {},
         gopls = {},
@@ -451,6 +443,28 @@ require('lazy').setup({
         },
       }
 
+      local global_defaults = vim.lsp.config['*'] or {}
+      vim.lsp.config(
+        '*',
+        vim.tbl_deep_extend('force', {}, global_defaults, {
+          capabilities = vim.tbl_deep_extend('force', {}, global_defaults.capabilities or {}, capabilities),
+        })
+      )
+
+      vim.lsp.config('ruby_lsp', {
+        init_options = {
+          formatter = 'standard',
+          linters = { 'standard' },
+        },
+      })
+
+      for server_name, server_config in pairs(servers) do
+        vim.lsp.config(server_name, server_config)
+        vim.lsp.enable(server_name)
+      end
+
+      vim.lsp.enable('ruby_lsp')
+
       --  You can press `g?` for help in this menu.
       require('mason').setup()
 
@@ -462,18 +476,7 @@ require('lazy').setup({
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
-      require('mason-lspconfig').setup {
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
-      }
+      require('mason-lspconfig').setup {}
     end,
   },
 
