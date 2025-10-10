@@ -113,7 +113,12 @@ return {
       require('mason').setup()
 
       local ensure = vim.list_extend({}, opts.ensure_installed or {})
-      vim.list_extend(ensure, vim.tbl_keys(servers))
+      local mason_skip = { ruby_lsp = true }
+      for server_name in pairs(servers) do
+        if not mason_skip[server_name] then
+          table.insert(ensure, server_name)
+        end
+      end
       require('mason-tool-installer').setup { ensure_installed = ensure }
 
       require('mason-lspconfig').setup {}
@@ -122,13 +127,16 @@ return {
 
   {
     'stevearc/conform.nvim',
-    event = { 'BufWritePre' },
+    event = { 'BufReadPre', 'BufNewFile' },
     cmd = { 'ConformInfo' },
     keys = {
       {
         '<leader>f',
         function()
-          require('conform').format { async = true, lsp_format = 'fallback' }
+          require('conform').format {
+            async = true,
+            lsp_fallback = true,
+          }
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -136,12 +144,10 @@ return {
     },
     opts = {
       notify_on_error = false,
-      format_on_save = function(bufnr)
-        local disable_filetypes = { c = true, cpp = true }
-        local lsp_format = disable_filetypes[vim.bo[bufnr].filetype] and 'never' or 'fallback'
+      format_on_save = function(_)
         return {
           timeout_ms = 500,
-          lsp_format = lsp_format,
+          lsp_fallback = false,
         }
       end,
       formatters_by_ft = {

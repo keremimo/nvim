@@ -70,8 +70,8 @@ return {
       -- Command + keymaps
       vim.api.nvim_create_user_command('SSplit', smart_split, {})
       vim.keymap.set('n', '<leader>w', smart_split, { desc = 'Smart split (auto h/v)' })
-      vim.keymap.set('n', '<leader>sv', '<cmd>vsplit<CR>', { desc = 'Vertical split' })
-      vim.keymap.set('n', '<leader>sh', '<cmd>split<CR>', { desc = 'Horizontal split' })
+      vim.keymap.set('n', '<leader>tt', '<cmd>vsplit<CR>', { desc = 'Vertical split' })
+      vim.keymap.set('n', '<leader>ts', '<cmd>split<CR>', { desc = 'Horizontal split' })
 
       -- Auto-rebalance on layout changes (extra safety)
       vim.api.nvim_create_autocmd({ 'WinNew', 'WinClosed' }, {
