@@ -1,3 +1,129 @@
+local default_auto_inlay_hints = {
+  gopls = {
+    gopls = {
+      hints = {
+        assignVariableTypes = true,
+        compositeLiteralFields = true,
+        compositeLiteralTypes = true,
+        constantValues = true,
+        functionTypeParameters = true,
+        parameterNames = true,
+        rangeVariableTypes = true,
+      },
+    },
+  },
+  lua_ls = {
+    Lua = {
+      hint = { enable = true },
+    },
+  },
+  pyright = {
+    python = {
+      analysis = {
+        inlayHints = {
+          variableTypes = true,
+          functionReturnTypes = true,
+          callArgumentNames = true,
+          callArgumentTypes = true,
+          propertyDeclarationTypes = true,
+        },
+      },
+    },
+  },
+  tsserver = {
+    typescript = {
+      inlayHints = {
+        includeInlayParameterNameHints = 'all',
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+    },
+    javascript = {
+      inlayHints = {
+        includeInlayParameterNameHints = 'all',
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+    },
+  },
+  rust_analyzer = {
+    ['rust-analyzer'] = {
+      inlayHints = {
+        bindingModeHints = { enable = true },
+        chainingHints = { enable = true },
+        closingBraceHints = { enable = true },
+        closureReturnTypeHints = { enable = true },
+        lifetimeElisionHints = { enable = 'always' },
+        parameterHints = { enable = true },
+        reborrowHints = { enable = true },
+        typeHints = { enable = true },
+      },
+    },
+  },
+  clangd = function(_, config)
+    local cmd = config.cmd
+    if cmd == nil then
+      cmd = { 'clangd' }
+    else
+      cmd = vim.deepcopy(cmd)
+    end
+
+    local has_inlay_flag = false
+    for _, entry in ipairs(cmd) do
+      if entry == '--inlay-hints' or entry:find '^%-%-inlay%-hints=' then
+        has_inlay_flag = true
+        break
+      end
+    end
+
+    if not has_inlay_flag then
+      table.insert(cmd, '--inlay-hints')
+    end
+
+    config.cmd = cmd
+
+    return {
+      clangd = {
+        InlayHints = {
+          Enabled = true,
+          ParameterNames = true,
+          DeducedTypes = true,
+          Designators = true,
+        },
+      },
+    }
+  end,
+  ruby_lsp = function(_, config)
+    config.init_options = config.init_options or {}
+    local enabled = config.init_options.enabledFeatures
+    if enabled == nil then
+      enabled = {}
+      config.init_options.enabledFeatures = enabled
+    end
+
+    if type(enabled) == 'table' then
+      local found = false
+      for _, feature in ipairs(enabled) do
+        if feature == 'inlayHints' then
+          found = true
+          break
+        end
+      end
+      if not found then
+        table.insert(enabled, 'inlayHints')
+      end
+    end
+  end,
+}
+
 return {
   {
     'folke/lazydev.nvim',
@@ -20,7 +146,9 @@ return {
       { 'j-hui/fidget.nvim', opts = {} },
     },
     opts = {
+      auto_inlay_hints = true,
       servers = {
+        clangd = {},
         gopls = {},
         lua_ls = {
           settings = {
@@ -29,6 +157,7 @@ return {
             },
           },
         },
+        rust_analyzer = {},
         ruby_lsp = {
           init_options = {
             formatter = 'standard',
@@ -81,6 +210,7 @@ return {
           end
 
           if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+            vim.lsp.inlay_hint.enable(true, { bufnr = buffer })
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = buffer })
             end, '[T]oggle Inlay [H]ints')
@@ -102,7 +232,28 @@ return {
         })
       )
 
+      local auto_inlay_hints = opts.auto_inlay_hints
+      local auto_inlay_presets
+      if auto_inlay_hints then
+        auto_inlay_presets = vim.deepcopy(default_auto_inlay_hints)
+        if type(auto_inlay_hints) == 'table' then
+          auto_inlay_presets = vim.tbl_deep_extend('force', auto_inlay_presets, auto_inlay_hints)
+        end
+      end
+
       for server_name, server_config in pairs(servers) do
+        if auto_inlay_presets then
+          local preset = auto_inlay_presets[server_name]
+          if preset == false then
+            preset = nil
+          elseif type(preset) == 'function' then
+            preset = preset(server_name, server_config)
+          end
+          if preset then
+            server_config.settings = vim.tbl_deep_extend('force', {}, preset, server_config.settings or {})
+          end
+        end
+
         vim.lsp.config(server_name, server_config)
       end
 
@@ -147,7 +298,7 @@ return {
       format_on_save = function(_)
         return {
           timeout_ms = 500,
-          lsp_fallback = false,
+          lsp_fallback = true,
         }
       end,
       formatters_by_ft = {
