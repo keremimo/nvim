@@ -6,6 +6,9 @@ return {
       float = { border = 'single' },
       focus = true,
       startinsert = true,
+      filetype = {
+        go = { 'cd $dir &&', 'go run .' },
+      },
     },
     config = function(_, opts)
       require('code_runner').setup(opts)

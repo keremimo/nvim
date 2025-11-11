@@ -22,14 +22,14 @@ map('n', '<C-g>', '<Cmd>:LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
 map('n', '<leader>rr', '<Cmd>RunCode<CR>', { silent = true, desc = 'Run code' })
 
 -- Colemak-style cursor movement
-map('', 'j', 'h', { noremap = true, silent = true })
-map('', 'k', 'j', { noremap = true, silent = true })
-map('', 'l', 'k', { noremap = true, silent = true })
-map('', ';', 'l', { noremap = true, silent = true })
-map('', 'h', '<Nop>', { noremap = true, silent = true })
+-- map('', 'j', 'h', { noremap = true, silent = true })
+-- map('', 'k', 'j', { noremap = true, silent = true })
+-- map('', 'l', 'k', { noremap = true, silent = true })
+-- map('', ';', 'l', { noremap = true, silent = true })
+-- map('', 'h', '<Nop>', { noremap = true, silent = true })
 
 -- Insert mode cursor tweaks
-map('i', '<A-j>', '<Left>', { noremap = true, silent = true })
-map('i', '<A-k>', '<Down>', { noremap = true, silent = true })
-map('i', '<A-l>', '<Up>', { noremap = true, silent = true })
-map('i', '<A-;>', '<Right>', { noremap = true, silent = true })
+-- map('i', '<A-j>', '<Left>', { noremap = true, silent = true })
+-- map('i', '<A-k>', '<Down>', { noremap = true, silent = true })
+-- map('i', '<A-l>', '<Up>', { noremap = true, silent = true })
+-- map('i', '<A-;>', '<Right>', { noremap = true, silent = true })
