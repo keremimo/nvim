@@ -18,7 +18,7 @@ map('n', '<leader>e', '<Cmd>Neotree toggle<CR>', { silent = true, desc = 'Toggle
 map('n', '<C-e>', '<Cmd>Neotree toggle<CR>', { silent = true, desc = 'Toggle Neo-tree' })
 map('n', '<C-q>', '<Cmd>:q<CR>', { silent = true, desc = 'Quit window' })
 map({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>:w<CR><ESC>', { silent = true, desc = 'Save file' })
-map('n', '<C-g>', '<Cmd>:LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
+map('n', '<C-g>', function() Snacks.lazygit() end, { silent = true, desc = 'Open LazyGit' })
 map('n', '<leader>rr', '<Cmd>RunCode<CR>', { silent = true, desc = 'Run code' })
 
 -- Colemak-style cursor movement
