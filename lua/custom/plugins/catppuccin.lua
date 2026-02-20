@@ -36,7 +36,14 @@ return {
         -- miscs = {}, -- Uncomment to turn off hard-coded styles
       },
       color_overrides = {},
-      custom_highlights = {},
+      custom_highlights = function()
+        return {
+          NormalFloat = { bg = 'NONE' },
+          FloatBorder = { bg = 'NONE' },
+          TermNormal = { bg = 'NONE', ctermbg = 'NONE' },
+          TermNormalNC = { bg = 'NONE', ctermbg = 'NONE' },
+        }
+      end,
       default_integrations = true,
       integrations = {
         cmp = true,

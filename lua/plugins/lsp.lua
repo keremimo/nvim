@@ -295,9 +295,13 @@ return {
     },
     opts = {
       notify_on_error = false,
-      format_on_save = function(_)
+      format_on_save = function(bufnr)
+        local timeout = 500
+        if vim.bo[bufnr].filetype == 'ruby' then
+          timeout = 3000
+        end
         return {
-          timeout_ms = 500,
+          timeout_ms = timeout,
           lsp_fallback = true,
         }
       end,

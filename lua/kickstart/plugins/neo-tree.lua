@@ -15,64 +15,6 @@ return {
   },
   opts = {
     filesystem = {
-      commands = {
-        open_tab_smart = function(state)
-          local node = state.tree:get_node()
-          if not node then
-            return
-          end
-
-          local navigation = require('custom.utils.navigation')
-          local fs_commands = require('neo-tree.sources.filesystem.commands')
-
-          if node.type ~= 'file' then
-            fs_commands.toggle_node(state)
-            return
-          end
-
-          local path = vim.fn.fnamemodify(node:get_id(), ':p')
-
-          if navigation.focus_or_open(path, {
-            fallback = function(done)
-              fs_commands.open_tabnew(state)
-              if done then
-                vim.schedule(done)
-              end
-            end,
-          }) then
-            return
-          end
-        end,
-
-        open_current_smart = function(state)
-          local node = state.tree:get_node()
-          if not node then
-            return
-          end
-
-          local navigation = require('custom.utils.navigation')
-          local fs_commands = require('neo-tree.sources.filesystem.commands')
-
-          if node.type ~= 'file' then
-            fs_commands.toggle_node(state)
-            return
-          end
-
-          local path = vim.fn.fnamemodify(node:get_id(), ':p')
-
-          if navigation.focus_or_open(path, {
-            prefer_current = true,
-            fallback = function(done)
-              fs_commands.open(state)
-              if done then
-                vim.schedule(done)
-              end
-            end,
-          }) then
-            return
-          end
-        end,
-      },
       filtered_items = {
         bind_to_cwd = true,
         cwd_target = {
@@ -88,12 +30,62 @@ return {
         position = 'right',
         auto_expand_width = true,
         mappings = {
-          ['<cr>'] = 'open_tab_smart',
-          ['o'] = 'open_tab_smart',
-          ['<S-CR>'] = 'open_current_smart',
+          ['<cr>'] = 'open',
+          ['o'] = 'open',
+          ['<S-CR>'] = 'open',
           ['\\'] = 'close_window',
         },
       },
     },
   },
+  config = function(_, opts)
+    local function has_neotree_in_tab(tab)
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].filetype == 'neo-tree' then
+          return true
+        end
+      end
+      return false
+    end
+
+    local function any_neotree_open()
+      for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+        if has_neotree_in_tab(tab) then
+          return true
+        end
+      end
+      return false
+    end
+
+    opts.event_handlers = opts.event_handlers or {}
+    table.insert(opts.event_handlers, {
+      event = 'neo_tree_window_after_open',
+      handler = function()
+        vim.g.neotree_sticky_tabs = true
+      end,
+    })
+    table.insert(opts.event_handlers, {
+      event = 'neo_tree_window_after_close',
+      handler = function()
+        vim.g.neotree_sticky_tabs = any_neotree_open()
+      end,
+    })
+
+    require('neo-tree').setup(opts)
+
+    local group = vim.api.nvim_create_augroup('NeoTreeStickyTabs', { clear = true })
+    vim.api.nvim_create_autocmd('TabEnter', {
+      group = group,
+      callback = function()
+        if not vim.g.neotree_sticky_tabs then
+          return
+        end
+        if has_neotree_in_tab(0) then
+          return
+        end
+        vim.cmd 'Neotree show'
+      end,
+    })
+  end,
 }

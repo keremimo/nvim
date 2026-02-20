@@ -24,6 +24,7 @@ opt.breakindent = true
 
 -- Editing defaults
 opt.undofile = true
+opt.autoread = true
 opt.splitright = true
 opt.splitbelow = true
 opt.ignorecase = true

@@ -47,6 +47,30 @@ return {
   },
 
   {
+    'lewis6991/gitsigns.nvim',
+    event = { 'BufReadPre', 'BufNewFile' },
+    opts = {
+      current_line_blame = true,
+      current_line_blame_opts = {
+        delay = 300,
+      },
+      on_attach = function(buffer)
+        local gitsigns = require 'gitsigns'
+        local map = function(mode, lhs, rhs, desc)
+          vim.keymap.set(mode, lhs, rhs, { buffer = buffer, desc = desc })
+        end
+
+        map('n', '<leader>hb', gitsigns.blame_line, 'Git: [B]lame Line')
+        map('n', '<leader>tb', gitsigns.toggle_current_line_blame, '[T]oggle Git [B]lame')
+        map('n', ']h', gitsigns.next_hunk, 'Git: Next Hunk')
+        map('n', '[h', gitsigns.prev_hunk, 'Git: Previous Hunk')
+        map('n', '<leader>hs', gitsigns.stage_hunk, 'Git: [S]tage Hunk')
+        map('n', '<leader>hr', gitsigns.reset_hunk, 'Git: [R]eset Hunk')
+      end,
+    },
+  },
+
+  {
     'nvim-lualine/lualine.nvim',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     opts = {
