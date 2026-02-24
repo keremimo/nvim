@@ -326,28 +326,52 @@ return {
         desc = 'Keep layout stable when windows close in Claude/Neo-tree session',
       })
 
+      local function materialize_sticky_sidebars()
+        if #vim.api.nvim_list_uis() == 0 then
+          return
+        end
+
+        local should_show_claude = vim.g.claude_sticky_tabs or any_claude_open()
+        if should_show_claude then
+          vim.g.claude_sticky_tabs = true
+        end
+
+        if vim.g.neotree_sticky_tabs and not find_neotree_win() then
+          pcall(vim.cmd, 'Neotree show')
+        end
+
+        if should_show_claude then
+          local ok_terminal, terminal = pcall(require, 'claudecode.terminal')
+          if ok_terminal and type(terminal.ensure_visible) == 'function' then
+            terminal.ensure_visible()
+          end
+          schedule_restack(10, 40)
+        elseif vim.g.neotree_sticky_tabs then
+          schedule_restack(6, 40)
+        end
+      end
+
       vim.api.nvim_create_autocmd({ 'TabNewEntered', 'TabEnter' }, {
         group = group,
         callback = function()
-          refresh_claude_sticky_tabs()
-          if not vim.g.claude_sticky_tabs then
+          vim.defer_fn(materialize_sticky_sidebars, 20)
+        end,
+        desc = 'Keep Claude terminal visible across tabs',
+      })
+
+      vim.api.nvim_create_autocmd('VimEnter', {
+        group = group,
+        once = true,
+        callback = function()
+          if #vim.api.nvim_list_uis() == 0 then
             return
           end
 
-          if vim.g.neotree_sticky_tabs and not find_neotree_win() then
-            pcall(vim.cmd, 'Neotree show')
-          end
-
-          if not has_claude_in_tab(0) then
-            local ok_terminal, terminal = pcall(require, 'claudecode.terminal')
-            if ok_terminal and type(terminal.ensure_visible) == 'function' then
-              terminal.ensure_visible()
-            end
-          end
-
-          schedule_restack(10, 40)
+          vim.g.neotree_sticky_tabs = true
+          vim.g.claude_sticky_tabs = true
+          vim.defer_fn(materialize_sticky_sidebars, 40)
         end,
-        desc = 'Keep Claude terminal visible across tabs',
+        desc = 'Open Neo-tree and Claude on startup',
       })
 
       vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
