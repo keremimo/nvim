@@ -109,6 +109,7 @@ return {
         vim.api.nvim_set_option_value('winfixwidth', true, { win = target_win })
         vim.api.nvim_set_option_value('winfixheight', true, { win = target_win })
         vim.api.nvim_set_option_value('winfixwidth', true, { win = neotree_win })
+        vim.api.nvim_set_option_value('winfixheight', true, { win = neotree_win })
         pcall(vim.api.nvim_win_set_width, target_win, target_width)
         pcall(vim.api.nvim_win_set_width, neotree_win, target_width)
         pcall(vim.api.nvim_win_set_height, target_win, desired_height)
@@ -151,6 +152,46 @@ return {
       end
 
       local group = vim.api.nvim_create_augroup('ClaudeCodeTerminalWidth', { clear = true })
+      local function is_sidebar_win(win)
+        if not win or not vim.api.nvim_win_is_valid(win) then
+          return false
+        end
+
+        local buf = vim.api.nvim_win_get_buf(win)
+        if not buf or not vim.api.nvim_buf_is_valid(buf) then
+          return false
+        end
+
+        return vim.bo[buf].filetype == 'neo-tree' or is_claude_term_buf(buf)
+      end
+
+      local function balance_main_windows()
+        local main_wins = {}
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if vim.api.nvim_win_is_valid(win) then
+            if is_sidebar_win(win) then
+              vim.api.nvim_set_option_value('winfixwidth', true, { win = win })
+            else
+              vim.api.nvim_set_option_value('winfixwidth', false, { win = win })
+              vim.api.nvim_set_option_value('winfixheight', false, { win = win })
+              table.insert(main_wins, win)
+            end
+          end
+        end
+
+        if #main_wins < 2 then
+          return
+        end
+
+        local current = vim.api.nvim_get_current_win()
+        vim.api.nvim_win_call(main_wins[1], function()
+          pcall(vim.cmd, 'wincmd =')
+        end)
+        if vim.api.nvim_win_is_valid(current) then
+          pcall(vim.api.nvim_set_current_win, current)
+        end
+      end
+
       local function apply_claude_width(win)
         if not win or not vim.api.nvim_win_is_valid(win) then
           return
@@ -195,13 +236,15 @@ return {
           attempt = attempt + 1
           if attempt < retries then
             vim.defer_fn(tick, delay)
+          else
+            balance_main_windows()
           end
         end
 
         vim.schedule(tick)
       end
 
-      vim.api.nvim_create_autocmd({ 'TermOpen', 'BufWinEnter', 'WinEnter' }, {
+      vim.api.nvim_create_autocmd({ 'TermOpen', 'BufWinEnter' }, {
         group = group,
         pattern = '*',
         callback = function(args)
@@ -214,6 +257,39 @@ return {
           end
         end,
         desc = 'Keep Claude and Neo-tree in a shared column',
+      })
+
+      vim.api.nvim_create_autocmd('BufWinLeave', {
+        group = group,
+        pattern = '*',
+        callback = function(args)
+          local buf = args.buf
+          if not is_claude_term_buf(buf) then
+            return
+          end
+
+          vim.defer_fn(function()
+            if not buf or not vim.api.nvim_buf_is_valid(buf) then
+              return
+            end
+            local win = vim.fn.bufwinid(buf)
+            if win == -1 or not vim.api.nvim_win_is_valid(win) then
+              schedule_restack(5, 35)
+            end
+          end, 20)
+        end,
+        desc = 'Rebalance main windows when Claude terminal window closes',
+      })
+
+      vim.api.nvim_create_autocmd('WinClosed', {
+        group = group,
+        pattern = '*',
+        callback = function()
+          if find_neotree_win() then
+            schedule_restack(4, 35)
+          end
+        end,
+        desc = 'Keep layout stable when windows close in Claude/Neo-tree session',
       })
 
       vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
