@@ -87,6 +87,71 @@ return {
         vim.g.claude_sticky_tabs = any_claude_open()
       end
 
+      local function ensure_claude_in_current_tab()
+        if has_claude_in_tab(0) then
+          return true
+        end
+
+        local term_buf = get_active_claude_term_buf()
+        local ok_terminal, terminal = pcall(require, 'claudecode.terminal')
+        if (not term_buf or not vim.api.nvim_buf_is_valid(term_buf))
+          and ok_terminal
+          and type(terminal.ensure_visible) == 'function'
+        then
+          terminal.ensure_visible()
+          return has_claude_in_tab(0)
+        end
+
+        if not term_buf or not vim.api.nvim_buf_is_valid(term_buf) then
+          return false
+        end
+
+        local current = vim.api.nvim_get_current_win()
+        local neotree_win = find_neotree_win()
+        local target_win
+
+        if neotree_win and vim.api.nvim_win_is_valid(neotree_win) then
+          local target_width = math.max(15, stacked_column_width)
+          vim.api.nvim_set_option_value('winfixwidth', true, { win = neotree_win })
+          pcall(vim.api.nvim_win_set_width, neotree_win, target_width)
+          vim.api.nvim_win_call(neotree_win, function()
+            if stack_with_neotree == 'above' then
+              vim.cmd 'leftabove split'
+            else
+              vim.cmd 'rightbelow split'
+            end
+            target_win = vim.api.nvim_get_current_win()
+          end)
+          if target_win and vim.api.nvim_win_is_valid(target_win) then
+            vim.api.nvim_win_set_buf(target_win, term_buf)
+            vim.api.nvim_set_option_value('winfixwidth', true, { win = target_win })
+            vim.api.nvim_set_option_value('winfixheight', true, { win = target_win })
+            pcall(vim.api.nvim_win_set_width, target_win, target_width)
+          end
+        else
+          local ratio = (opts.terminal and opts.terminal.split_width_percentage) or 0.22
+          local width = math.max(30, math.floor(vim.o.columns * ratio))
+          local side = (opts.terminal and opts.terminal.split_side) or 'right'
+          if side == 'left' then
+            vim.cmd('topleft ' .. width .. 'vsplit')
+          else
+            vim.cmd('botright ' .. width .. 'vsplit')
+          end
+          target_win = vim.api.nvim_get_current_win()
+          if target_win and vim.api.nvim_win_is_valid(target_win) then
+            vim.api.nvim_win_set_buf(target_win, term_buf)
+            vim.api.nvim_set_option_value('winfixwidth', true, { win = target_win })
+            vim.api.nvim_set_option_value('winfixheight', true, { win = target_win })
+          end
+        end
+
+        if vim.api.nvim_win_is_valid(current) and current ~= target_win then
+          pcall(vim.api.nvim_set_current_win, current)
+        end
+
+        return has_claude_in_tab(0)
+      end
+
       local function stack_claude_with_neotree(term_buf)
         if moving_claude then
           return
@@ -343,7 +408,9 @@ return {
         if should_show_claude then
           local ok_terminal, terminal = pcall(require, 'claudecode.terminal')
           if ok_terminal and type(terminal.ensure_visible) == 'function' then
-            terminal.ensure_visible()
+            if not ensure_claude_in_current_tab() then
+              terminal.ensure_visible()
+            end
           end
           schedule_restack(10, 40)
         elseif vim.g.neotree_sticky_tabs then
