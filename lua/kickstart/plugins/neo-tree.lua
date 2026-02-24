@@ -15,6 +15,10 @@ return {
   },
   opts = {
     filesystem = {
+      follow_current_file = {
+        enabled = true,
+        leave_dirs_open = false,
+      },
       filtered_items = {
         bind_to_cwd = true,
         cwd_target = {
@@ -80,7 +84,7 @@ return {
     require('neo-tree').setup(opts)
 
     local group = vim.api.nvim_create_augroup('NeoTreeStickyTabs', { clear = true })
-    vim.api.nvim_create_autocmd('TabEnter', {
+    vim.api.nvim_create_autocmd({ 'TabNewEntered', 'TabEnter' }, {
       group = group,
       callback = function()
         if not vim.g.neotree_sticky_tabs then

@@ -326,7 +326,7 @@ return {
         desc = 'Keep layout stable when windows close in Claude/Neo-tree session',
       })
 
-      vim.api.nvim_create_autocmd('TabEnter', {
+      vim.api.nvim_create_autocmd({ 'TabNewEntered', 'TabEnter' }, {
         group = group,
         callback = function()
           refresh_claude_sticky_tabs()
