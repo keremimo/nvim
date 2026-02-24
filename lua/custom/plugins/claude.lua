@@ -15,6 +15,7 @@ return {
       local stacked_height_ratio = 0.5
       local stacked_column_width = 30
       local moving_claude = false
+      local restack_generation = 0
 
       local function find_neotree_win()
         for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
@@ -29,6 +30,37 @@ return {
       local function win_col(win)
         local pos = vim.api.nvim_win_get_position(win)
         return pos[2]
+      end
+
+      local function get_active_claude_term_buf()
+        local ok_terminal, terminal = pcall(require, 'claudecode.terminal')
+        if not ok_terminal or type(terminal.get_active_terminal_bufnr) ~= 'function' then
+          return nil
+        end
+
+        local term_buf = terminal.get_active_terminal_bufnr()
+        if term_buf and vim.api.nvim_buf_is_valid(term_buf) then
+          return term_buf
+        end
+
+        return nil
+      end
+
+      local function is_claude_term_buf(buf)
+        if not buf or not vim.api.nvim_buf_is_valid(buf) then
+          return false
+        end
+        if vim.bo[buf].buftype ~= 'terminal' then
+          return false
+        end
+
+        local active = get_active_claude_term_buf()
+        if active and buf == active then
+          return true
+        end
+
+        local name = vim.api.nvim_buf_get_name(buf)
+        return name:match('claude') ~= nil
       end
 
       local function stack_claude_with_neotree(term_buf)
@@ -97,10 +129,17 @@ return {
 
       local function visible_claude_term_bufs()
         local bufs = {}
+        local active = get_active_claude_term_buf()
+        if active then
+          local active_win = vim.fn.bufwinid(active)
+          if active_win ~= -1 and vim.api.nvim_win_is_valid(active_win) then
+            bufs[active] = true
+          end
+        end
+
         for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
           local buf = vim.api.nvim_win_get_buf(win)
-          local name = vim.api.nvim_buf_get_name(buf)
-          if vim.bo[buf].buftype == 'terminal' and name:match('claude') then
+          if is_claude_term_buf(buf) then
             bufs[buf] = true
           end
         end
@@ -129,28 +168,60 @@ return {
         pcall(vim.api.nvim_win_set_width, win, width)
       end
 
-      vim.api.nvim_create_autocmd('BufWinEnter', {
-        group = group,
-        pattern = 'term://*claude*',
-        callback = function(args)
-          local win = vim.fn.bufwinid(args.buf)
-          apply_claude_width(win)
-          vim.schedule(function()
-            stack_claude_with_neotree(args.buf)
-          end)
-        end,
-        desc = 'Keep Claude terminal width constrained',
-      })
+      local function sync_claude_neotree_layout()
+        for _, term_buf in ipairs(visible_claude_term_bufs()) do
+          local win = vim.fn.bufwinid(term_buf)
+          if win ~= -1 and vim.api.nvim_win_is_valid(win) then
+            apply_claude_width(win)
+            stack_claude_with_neotree(term_buf)
+          end
+        end
+      end
 
-      vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
+      local function schedule_restack(retries, delay)
+        retries = retries or 8
+        delay = delay or 40
+
+        restack_generation = restack_generation + 1
+        local generation = restack_generation
+        local attempt = 0
+
+        local function tick()
+          if generation ~= restack_generation then
+            return
+          end
+
+          sync_claude_neotree_layout()
+          attempt = attempt + 1
+          if attempt < retries then
+            vim.defer_fn(tick, delay)
+          end
+        end
+
+        vim.schedule(tick)
+      end
+
+      vim.api.nvim_create_autocmd({ 'TermOpen', 'BufWinEnter', 'WinEnter' }, {
         group = group,
-        pattern = 'term://*claude*',
+        pattern = '*',
         callback = function(args)
           local buf = args.buf
           if not buf or not vim.api.nvim_buf_is_valid(buf) then
             return
           end
-          if vim.bo[buf].buftype ~= 'terminal' then
+          if vim.bo[buf].buftype == 'terminal' or is_claude_term_buf(buf) or vim.bo[buf].filetype == 'neo-tree' then
+            schedule_restack()
+          end
+        end,
+        desc = 'Keep Claude and Neo-tree in a shared column',
+      })
+
+      vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
+        group = group,
+        pattern = '*',
+        callback = function(args)
+          local buf = args.buf
+          if not is_claude_term_buf(buf) then
             return
           end
           vim.schedule(function()
@@ -165,35 +236,16 @@ return {
       vim.api.nvim_create_autocmd('VimResized', {
         group = group,
         callback = function()
-          for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-            local buf = vim.api.nvim_win_get_buf(win)
-            local name = vim.api.nvim_buf_get_name(buf)
-            if vim.bo[buf].buftype == 'terminal' and name:match('claude') then
-              apply_claude_width(win)
-            end
-          end
+          schedule_restack(6, 50)
         end,
         desc = 'Reapply Claude terminal width after editor resize',
       })
 
-      vim.api.nvim_create_autocmd({ 'FileType', 'BufWinEnter' }, {
+      vim.api.nvim_create_autocmd('FileType', {
         group = group,
-        pattern = { 'neo-tree', '*' },
-        callback = function(args)
-          if args.event == 'BufWinEnter' then
-            local buf = args.buf
-            if not buf or not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= 'neo-tree' then
-              return
-            end
-          end
-          if args.event == 'FileType' and vim.bo[args.buf].filetype ~= 'neo-tree' then
-            return
-          end
-          vim.schedule(function()
-            for _, term_buf in ipairs(visible_claude_term_bufs()) do
-              stack_claude_with_neotree(term_buf)
-            end
-          end)
+        pattern = 'neo-tree',
+        callback = function()
+          schedule_restack()
         end,
         desc = 'Restack Claude terminal when Neo-tree opens',
       })
