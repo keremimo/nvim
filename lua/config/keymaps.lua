@@ -1,5 +1,16 @@
 local map = vim.keymap.set
 
+local function smart_split()
+  local width = vim.api.nvim_win_get_width(0)
+  local height = vim.api.nvim_win_get_height(0)
+
+  if width >= height then
+    vim.cmd 'vsplit'
+  else
+    vim.cmd 'split'
+  end
+end
+
 -- Basics
 map('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'Clear search highlights' })
 map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Diagnostic location list' })
@@ -16,6 +27,7 @@ map('n', '<C-k>', '<C-w><C-k>', { desc = 'Focus upper window' })
 -- Quick access
 map('n', '<leader>e', '<Cmd>Neotree toggle<CR>', { silent = true, desc = 'Toggle Neo-tree' })
 map('n', '<C-e>', '<Cmd>Neotree toggle<CR>', { silent = true, desc = 'Toggle Neo-tree' })
+map('n', '<leader>w', smart_split, { desc = 'Smart split (auto h/v)' })
 map('n', '<C-q>', '<Cmd>q<CR>', { silent = true, desc = 'Quit window' })
 map({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>w<CR><ESC>', { silent = true, desc = 'Save file' })
 map('n', '<C-g>', '<Cmd>LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
