@@ -3,8 +3,9 @@ local map = vim.keymap.set
 local function smart_split()
   local width = vim.api.nvim_win_get_width(0)
   local height = vim.api.nvim_win_get_height(0)
+  local vertical_ratio_threshold = 1.8
 
-  if width >= height then
+  if (width / math.max(height, 1)) >= vertical_ratio_threshold then
     vim.cmd 'vsplit'
   else
     vim.cmd 'split'
