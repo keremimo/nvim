@@ -1,6 +1,8 @@
 return {
   {
     'nvim-treesitter/nvim-treesitter',
+    event = { 'BufReadPost', 'BufNewFile' },
+    cmd = { 'TSInstall', 'TSUpdate', 'TSUninstall', 'TSBufEnable', 'TSBufDisable', 'TSModuleInfo' },
     build = ':TSUpdate',
     main = 'nvim-treesitter.configs',
     dependencies = { 'RRethy/nvim-treesitter-endwise' },

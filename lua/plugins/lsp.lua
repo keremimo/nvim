@@ -139,6 +139,8 @@ return {
 
   {
     'neovim/nvim-lspconfig',
+    event = { 'BufReadPre', 'BufNewFile' },
+    cmd = { 'LspInfo', 'LspStart', 'LspStop', 'LspRestart' },
     dependencies = {
       'williamboman/mason.nvim',
       'williamboman/mason-lspconfig.nvim',

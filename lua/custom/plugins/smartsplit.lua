@@ -15,7 +15,7 @@ return {
   {
     dir = vim.fn.stdpath 'config', -- point to your config dir; we only need config() to run
     name = 'smart-tiler',
-    lazy = false,
+    event = 'VeryLazy',
     config = function()
       -- Keep layout balanced like a tiler
       vim.opt.equalalways = true

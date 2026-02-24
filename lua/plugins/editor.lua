@@ -1,6 +1,7 @@
 return {
   {
     'CRAG666/code_runner.nvim',
+    cmd = { 'RunCode', 'RunFile', 'RunProject', 'RunClose', 'CrStopHr' },
     opts = {
       mode = 'float',
       float = { border = 'single' },
@@ -17,6 +18,7 @@ return {
 
   {
     'CRAG666/betterTerm.nvim',
+    event = 'VeryLazy',
     opts = {
       prefix = 'CRAG',
       startInserted = true,
@@ -40,6 +42,7 @@ return {
 
   {
     'echasnovski/mini.nvim',
+    event = 'VeryLazy',
     config = function()
       require('mini.diff').setup()
       require('mini.surround').setup()
