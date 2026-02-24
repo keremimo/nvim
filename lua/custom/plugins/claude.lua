@@ -16,6 +16,7 @@ return {
       local stacked_column_width = 40
       local moving_claude = false
       local restack_generation = 0
+      vim.g.claude_sticky_tabs = vim.g.claude_sticky_tabs or false
 
       local function find_neotree_win()
         for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
@@ -61,6 +62,29 @@ return {
 
         local name = vim.api.nvim_buf_get_name(buf)
         return name:match('claude') ~= nil
+      end
+
+      local function has_claude_in_tab(tab)
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+          local buf = vim.api.nvim_win_get_buf(win)
+          if is_claude_term_buf(buf) then
+            return true
+          end
+        end
+        return false
+      end
+
+      local function any_claude_open()
+        for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+          if has_claude_in_tab(tab) then
+            return true
+          end
+        end
+        return false
+      end
+
+      local function refresh_claude_sticky_tabs()
+        vim.g.claude_sticky_tabs = any_claude_open()
       end
 
       local function stack_claude_with_neotree(term_buf)
@@ -232,12 +256,16 @@ return {
             return
           end
 
+          if any_claude_open() then
+            vim.g.claude_sticky_tabs = true
+          end
           sync_claude_neotree_layout()
           attempt = attempt + 1
           if attempt < retries then
             vim.defer_fn(tick, delay)
           else
             balance_main_windows()
+            refresh_claude_sticky_tabs()
           end
         end
 
@@ -253,6 +281,9 @@ return {
             return
           end
           if vim.bo[buf].buftype == 'terminal' or is_claude_term_buf(buf) or vim.bo[buf].filetype == 'neo-tree' then
+            if is_claude_term_buf(buf) then
+              vim.g.claude_sticky_tabs = true
+            end
             schedule_restack()
           end
         end,
@@ -275,6 +306,8 @@ return {
             local win = vim.fn.bufwinid(buf)
             if win == -1 or not vim.api.nvim_win_is_valid(win) then
               schedule_restack(5, 35)
+            else
+              refresh_claude_sticky_tabs()
             end
           end, 20)
         end,
@@ -285,11 +318,36 @@ return {
         group = group,
         pattern = '*',
         callback = function()
+          refresh_claude_sticky_tabs()
           if find_neotree_win() then
             schedule_restack(4, 35)
           end
         end,
         desc = 'Keep layout stable when windows close in Claude/Neo-tree session',
+      })
+
+      vim.api.nvim_create_autocmd('TabEnter', {
+        group = group,
+        callback = function()
+          refresh_claude_sticky_tabs()
+          if not vim.g.claude_sticky_tabs then
+            return
+          end
+
+          if vim.g.neotree_sticky_tabs and not find_neotree_win() then
+            pcall(vim.cmd, 'Neotree show')
+          end
+
+          if not has_claude_in_tab(0) then
+            local ok_terminal, terminal = pcall(require, 'claudecode.terminal')
+            if ok_terminal and type(terminal.ensure_visible) == 'function' then
+              terminal.ensure_visible()
+            end
+          end
+
+          schedule_restack(10, 40)
+        end,
+        desc = 'Keep Claude terminal visible across tabs',
       })
 
       vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
