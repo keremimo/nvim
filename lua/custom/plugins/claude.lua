@@ -200,7 +200,8 @@ return {
     end,
     keys = {
       { '<leader>a', nil, desc = 'AI/Claude Code' },
-      { '<C-Space>', '<cmd>ClaudeCode<cr>', mode = { 'n', 't', 'i' }, desc = 'Toggle Claude' },
+      { '<leader>ac', '<cmd>ClaudeCode<cr>', desc = 'Toggle Claude' },
+      { '<C-Space>', '<cmd>ClaudeCode<cr>', mode = { 'n', 't' }, desc = 'Toggle Claude' },
       { '<leader>af', '<cmd>ClaudeCodeFocus<cr>', desc = 'Focus Claude' },
       { '<leader>ar', '<cmd>ClaudeCode --resume<cr>', desc = 'Resume Claude' },
       { '<leader>aC', '<cmd>ClaudeCode --continue<cr>', desc = 'Continue Claude' },

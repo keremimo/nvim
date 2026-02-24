@@ -140,7 +140,7 @@ return {
   {
     'neovim/nvim-lspconfig',
     dependencies = {
-      { 'williamboman/mason.nvim', config = true },
+      'williamboman/mason.nvim',
       'williamboman/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       { 'j-hui/fidget.nvim', opts = {} },
@@ -186,6 +186,15 @@ return {
           map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
           map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
           map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+          map('K', vim.lsp.buf.hover, 'Hover Documentation')
+          map('gK', vim.lsp.buf.signature_help, 'Signature Help')
+          map('gl', vim.diagnostic.open_float, 'Open Diagnostic Float')
+          map(']d', function()
+            vim.diagnostic.jump { count = 1, float = true }
+          end, 'Next Diagnostic')
+          map('[d', function()
+            vim.diagnostic.jump { count = -1, float = true }
+          end, 'Previous Diagnostic')
 
           local client = vim.lsp.get_client_by_id(event.data.client_id)
           if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
@@ -219,6 +228,10 @@ return {
       })
 
       local capabilities = vim.lsp.protocol.make_client_capabilities()
+      local ok_blink, blink = pcall(require, 'blink.cmp')
+      if ok_blink then
+        capabilities = blink.get_lsp_capabilities(capabilities)
+      end
       if opts.capabilities then
         capabilities = vim.tbl_deep_extend('force', capabilities, opts.capabilities)
       end
@@ -263,11 +276,23 @@ return {
 
       require('mason').setup()
 
-      local ensure = vim.list_extend({}, opts.ensure_installed or {})
+      local ensure = {}
+      local seen = {}
+      local function add_ensure(tool)
+        if not seen[tool] then
+          seen[tool] = true
+          table.insert(ensure, tool)
+        end
+      end
+
+      for _, tool in ipairs(opts.ensure_installed or {}) do
+        add_ensure(tool)
+      end
+
       local mason_skip = { ruby_lsp = true }
       for server_name in pairs(servers) do
         if not mason_skip[server_name] then
-          table.insert(ensure, server_name)
+          add_ensure(server_name)
         end
       end
       require('mason-tool-installer').setup { ensure_installed = ensure }

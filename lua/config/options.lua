@@ -14,7 +14,7 @@ opt.laststatus = 3
 opt.cmdheight = 0
 opt.list = true
 opt.listchars = { tab = '  ', trail = '·', nbsp = '␣' }
-opt.signcolumn = 'no'
+opt.signcolumn = 'yes'
 opt.scrolloff = 10
 opt.mouse = 'a'
 opt.mousemodel = 'extend'
@@ -48,7 +48,21 @@ vim.schedule(function()
   opt.clipboard = 'unnamedplus'
 end)
 
-vim.diagnostic.config { virtual_text = false, virtual_lines = true }
+vim.diagnostic.config {
+  underline = true,
+  severity_sort = true,
+  update_in_insert = false,
+  virtual_text = {
+    spacing = 2,
+    source = 'if_many',
+    prefix = '*',
+  },
+  virtual_lines = false,
+  float = {
+    border = 'rounded',
+    source = 'if_many',
+  },
+}
 
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'go',
