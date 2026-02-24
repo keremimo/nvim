@@ -18,6 +18,7 @@ map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Diagnostic location l
 
 -- Terminal
 map('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
+map('t', '<C-q>', '<C-\\><C-n><Cmd>q<CR>', { silent = true, desc = 'Quit terminal window' })
 
 -- Window navigation
 map('n', '<C-h>', '<C-w><C-h>', { desc = 'Focus left window' })
