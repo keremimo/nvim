@@ -13,7 +13,7 @@ return {
 
       local stack_with_neotree = 'below' -- set to 'above' to place Claude above Neo-tree
       local stacked_height_ratio = 0.5
-      local stacked_column_width = 30
+      local stacked_column_width = 36
       local moving_claude = false
       local restack_generation = 0
 
