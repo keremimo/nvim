@@ -1,7 +1,7 @@
 return {
   {
     'folke/noice.nvim',
-    enabled = false, -- Disabled in favor of snacks.notifier
+    enabled = false,
     event = 'VeryLazy',
     opts = {
       -- add any options here

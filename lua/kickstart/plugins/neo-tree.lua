@@ -28,7 +28,7 @@ return {
       window = {
         width = 20,
         position = 'right',
-        auto_expand_width = true,
+        auto_expand_width = false,
         mappings = {
           ['<cr>'] = 'open',
           ['o'] = 'open',
@@ -61,8 +61,13 @@ return {
     opts.event_handlers = opts.event_handlers or {}
     table.insert(opts.event_handlers, {
       event = 'neo_tree_window_after_open',
-      handler = function()
+      handler = function(args)
         vim.g.neotree_sticky_tabs = true
+        local win = args and args.winid
+        if win and vim.api.nvim_win_is_valid(win) then
+          vim.api.nvim_set_option_value('winfixwidth', true, { win = win })
+          pcall(vim.api.nvim_win_set_width, win, opts.filesystem.window.width or 20)
+        end
       end,
     })
     table.insert(opts.event_handlers, {
@@ -86,6 +91,20 @@ return {
         end
         vim.cmd 'Neotree show'
       end,
+    })
+
+    vim.api.nvim_create_autocmd('VimResized', {
+      group = group,
+      callback = function()
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          local buf = vim.api.nvim_win_get_buf(win)
+          if vim.bo[buf].filetype == 'neo-tree' then
+            vim.api.nvim_set_option_value('winfixwidth', true, { win = win })
+            pcall(vim.api.nvim_win_set_width, win, opts.filesystem.window.width or 20)
+          end
+        end
+      end,
+      desc = 'Keep Neo-tree window width fixed',
     })
   end,
 }
