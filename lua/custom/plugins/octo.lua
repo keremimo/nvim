@@ -5,6 +5,15 @@ return {
     opts = {
       picker = 'telescope',
       enable_builtin = true,
+      mappings = {
+        pull_request = {
+          checkout_pr = { lhs = '<localleader>oc', desc = 'checkout PR' },
+          resolve_thread = { lhs = '<localleader>or', desc = 'resolve PR thread' },
+        },
+        review_thread = {
+          resolve_thread = { lhs = '<localleader>or', desc = 'resolve PR thread' },
+        },
+      },
     },
     keys = {
       {
