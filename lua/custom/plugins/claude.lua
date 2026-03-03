@@ -2,6 +2,10 @@ return {
   {
     'coder/claudecode.nvim',
     opts = {
+      diff_opts = {
+        open_in_new_tab = true,
+        hide_terminal_in_new_tab = true,
+      },
       terminal = {
         provider = 'native',
         split_width_percentage = 0.18,
@@ -10,6 +14,57 @@ return {
     },
     config = function(_, opts)
       require('claudecode').setup(opts)
+
+      local function find_empty_editor_win(tab)
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+          if vim.api.nvim_win_is_valid(win) then
+            local win_cfg = vim.api.nvim_win_get_config(win)
+            if not (win_cfg.relative and win_cfg.relative ~= '') then
+              local buf = vim.api.nvim_win_get_buf(win)
+              if buf and vim.api.nvim_buf_is_valid(buf) then
+                local name = vim.api.nvim_buf_get_name(buf)
+                local buftype = vim.bo[buf].buftype
+                local filetype = vim.bo[buf].filetype
+                local modified = vim.bo[buf].modified
+                if name == '' and buftype == '' and filetype == '' and modified == false then
+                  return win
+                end
+              end
+            end
+          end
+        end
+        return nil
+      end
+
+      local ok_diff, diff = pcall(require, 'claudecode.diff')
+      if ok_diff and type(diff._create_diff_view_from_window) == 'function' and not diff._prefer_empty_tab_win_patched then
+        local original_create_view = diff._create_diff_view_from_window
+        diff._create_diff_view_from_window = function(
+          target_window,
+          old_file_path,
+          new_buffer,
+          tab_name,
+          is_new_file,
+          terminal_win_in_new_tab,
+          existing_buffer
+        )
+          local resolved_target = target_window
+          if (not resolved_target or not vim.api.nvim_win_is_valid(resolved_target)) and not terminal_win_in_new_tab then
+            resolved_target = find_empty_editor_win(vim.api.nvim_get_current_tabpage())
+          end
+
+          return original_create_view(
+            resolved_target,
+            old_file_path,
+            new_buffer,
+            tab_name,
+            is_new_file,
+            terminal_win_in_new_tab,
+            existing_buffer
+          )
+        end
+        diff._prefer_empty_tab_win_patched = true
+      end
 
       local stack_with_neotree = 'below' -- set to 'above' to place Claude above Neo-tree
       local stacked_height_ratio = 0.5
@@ -26,6 +81,20 @@ return {
           end
         end
         return nil
+      end
+
+      local function show_neotree_without_focus()
+        local original_win = vim.api.nvim_get_current_win()
+        local ok = pcall(vim.cmd, 'Neotree focus')
+        if not ok then
+          return false
+        end
+
+        if original_win and vim.api.nvim_win_is_valid(original_win) then
+          pcall(vim.api.nvim_set_current_win, original_win)
+        end
+
+        return find_neotree_win() ~= nil
       end
 
       local function win_col(win)
@@ -402,7 +471,7 @@ return {
         end
 
         if vim.g.neotree_sticky_tabs and not find_neotree_win() then
-          pcall(vim.cmd, 'Neotree show')
+          show_neotree_without_focus()
         end
 
         if should_show_claude then

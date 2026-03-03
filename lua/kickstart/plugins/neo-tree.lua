@@ -62,6 +62,18 @@ return {
       return false
     end
 
+    local function show_neotree_without_focus()
+      local original_win = vim.api.nvim_get_current_win()
+      local ok = pcall(vim.cmd, 'Neotree focus')
+      if not ok then
+        return
+      end
+
+      if original_win and vim.api.nvim_win_is_valid(original_win) then
+        pcall(vim.api.nvim_set_current_win, original_win)
+      end
+    end
+
     opts.event_handlers = opts.event_handlers or {}
     table.insert(opts.event_handlers, {
       event = 'neo_tree_window_after_open',
@@ -93,7 +105,7 @@ return {
         if has_neotree_in_tab(0) then
           return
         end
-        vim.cmd 'Neotree show'
+        show_neotree_without_focus()
       end,
     })
 
