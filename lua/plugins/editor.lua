@@ -3,7 +3,14 @@ return {
 
   {
     'folke/todo-comments.nvim',
-    event = { 'BufReadPost', 'BufNewFile' },
+    event = 'VeryLazy',
+    cmd = { 'TodoTrouble', 'TodoTelescope', 'TodoLocList', 'TodoQuickFix' },
+    keys = {
+      { ']t', function() require('todo-comments').jump_next() end, desc = 'Next todo comment' },
+      { '[t', function() require('todo-comments').jump_prev() end, desc = 'Previous todo comment' },
+      { '<leader>st', '<cmd>TodoTelescope<cr>', desc = '[S]earch [T]odo comments' },
+      { '<leader>xt', '<cmd>TodoTrouble<cr>', desc = 'Todo comments (Trouble)' },
+    },
     dependencies = { 'nvim-lua/plenary.nvim' },
     opts = { signs = false },
   },
@@ -47,7 +54,7 @@ return {
     opts = {
       options = {
         icons_enabled = true,
-        theme = 'catppuccin-nvim',
+        theme = 'catppuccin',
         component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },
         disabled_filetypes = {

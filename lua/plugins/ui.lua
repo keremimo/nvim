@@ -37,12 +37,17 @@ return {
         },
       },
       spec = {
+        { '<leader>a', group = '[A]I' },
         { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
         { '<leader>d', group = '[D]ocument' },
+        { '<leader>g', group = '[G]it' },
+        { '<leader>o', group = 'GitHub [O]cto' },
         { '<leader>r', group = '[R]ename' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
+        { '<leader>w', group = '[W]indows' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>x', group = 'Diagnostics/Trouble' },
       },
     },
   },
@@ -108,6 +113,9 @@ return {
       local telescope = require 'telescope'
 
       telescope.setup {
+        defaults = {
+          file_ignore_patterns = { 'node_modules/', '%.git/' },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),

@@ -10,7 +10,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 
 local reload_group = vim.api.nvim_create_augroup('kickstart-auto-reload', { clear = true })
 
-vim.api.nvim_create_autocmd({ 'FocusGained', 'CursorHold', 'TermClose' }, {
+vim.api.nvim_create_autocmd({ 'FocusGained', 'TermClose' }, {
   desc = 'Reload files changed outside of Neovim',
   group = reload_group,
   callback = function()
