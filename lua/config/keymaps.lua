@@ -38,6 +38,8 @@ map('n', '<leader>w=', '<C-w>=', { desc = 'Equalize window sizes' })
 map('n', '<C-q>', '<Cmd>q<CR>', { silent = true, desc = 'Quit window' })
 map({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>w<CR><ESC>', { silent = true, desc = 'Save file' })
 map('n', '<leader>gg', '<Cmd>LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
+map('n', '<leader>tt', '<Cmd>ThemeCycle<CR>', { silent = true, desc = '[T]oggle [T]heme (cycle)' })
+map('n', '<leader>tT', '<Cmd>ThemePick<CR>', { silent = true, desc = '[T]oggle theme [P]icker' })
 
 -- Colemak-style cursor movement
 -- map('', 'j', 'h', { noremap = true, silent = true })
