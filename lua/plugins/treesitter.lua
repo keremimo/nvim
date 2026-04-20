@@ -4,7 +4,7 @@ return {
     event = { 'BufReadPost', 'BufNewFile' },
     cmd = { 'TSInstall', 'TSUpdate', 'TSUninstall', 'TSBufEnable', 'TSBufDisable', 'TSModuleInfo' },
     build = ':TSUpdate',
-    main = 'nvim-treesitter',
+    main = 'nvim-treesitter.configs',
     dependencies = { 'RRethy/nvim-treesitter-endwise' },
     opts = {
       ensure_installed = {
@@ -21,15 +21,17 @@ return {
         'vim',
         'vimdoc',
       },
-      auto_install = true,
+      auto_install = false,
       highlight = {
         enable = true,
-        additional_vim_regex_highlighting = { 'ruby' },
+        disable = { 'markdown', 'markdown_inline' },
+        additional_vim_regex_highlighting = { 'ruby', 'markdown' },
       },
       indent = {
         enable = true,
-        disable = { 'ruby' },
+        disable = { 'ruby', 'markdown' },
       },
+      endwise = { enable = true },
     },
   },
 }

@@ -139,7 +139,20 @@ return {
 
   {
     'neovim/nvim-lspconfig',
-    event = { 'BufReadPre', 'BufNewFile' },
+    ft = {
+      'c',
+      'cpp',
+      'go',
+      'lua',
+      'python',
+      'rust',
+      'ruby',
+      'eruby',
+      'javascript',
+      'javascriptreact',
+      'typescript',
+      'typescriptreact',
+    },
     cmd = { 'LspInfo', 'LspStart', 'LspStop', 'LspRestart' },
     dependencies = {
       'williamboman/mason.nvim',
@@ -302,7 +315,11 @@ return {
           add_ensure(server_name)
         end
       end
-      require('mason-tool-installer').setup { ensure_installed = ensure }
+      require('mason-tool-installer').setup {
+        ensure_installed = ensure,
+        run_on_start = false,
+        auto_update = false,
+      }
 
       require('mason-lspconfig').setup {}
     end,
@@ -310,7 +327,7 @@ return {
 
   {
     'stevearc/conform.nvim',
-    event = { 'BufReadPre', 'BufNewFile' },
+    ft = { 'lua', 'eruby', 'ruby', 'go' },
     cmd = { 'ConformInfo' },
     keys = {
       {

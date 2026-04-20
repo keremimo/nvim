@@ -10,7 +10,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 
 local reload_group = vim.api.nvim_create_augroup('kickstart-auto-reload', { clear = true })
 
-vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHoldI' }, {
+vim.api.nvim_create_autocmd({ 'FocusGained', 'CursorHold', 'TermClose' }, {
   desc = 'Reload files changed outside of Neovim',
   group = reload_group,
   callback = function()
@@ -66,5 +66,15 @@ vim.api.nvim_create_autocmd('BufReadPost', {
 
     pcall(vim.treesitter.stop, buf)
     vim.diagnostic.enable(false, { bufnr = buf })
+  end,
+})
+
+vim.api.nvim_create_autocmd('FileType', {
+  desc = 'Work around Neovim 0.12 markdown treesitter injection crash',
+  group = vim.api.nvim_create_augroup('config-markdown-treesitter-guard', { clear = true }),
+  pattern = { 'markdown' },
+  callback = function(args)
+    vim.treesitter.stop(args.buf)
+    vim.bo[args.buf].syntax = 'markdown'
   end,
 })
