@@ -35,6 +35,25 @@ local function build_themes()
   return themes
 end
 
+local function apply_transparency()
+  local groups = {
+    'Normal',
+    'NormalNC',
+    'SignColumn',
+    'EndOfBuffer',
+    'FoldColumn',
+    'NormalFloat',
+    'FloatBorder',
+    'Pmenu',
+    'TelescopeNormal',
+    'TelescopeBorder',
+  }
+
+  for _, group in ipairs(groups) do
+    vim.api.nvim_set_hl(0, group, { bg = 'NONE', ctermbg = 'NONE' })
+  end
+end
+
 return {
   -- Theme pack
   { 'folke/tokyonight.nvim', lazy = false, priority = 1000 },
@@ -61,6 +80,12 @@ return {
     lazy = false,
     priority = 999,
     config = function()
+      local transparency_group = vim.api.nvim_create_augroup('config-global-transparency', { clear = true })
+      vim.api.nvim_create_autocmd('ColorScheme', {
+        group = transparency_group,
+        callback = apply_transparency,
+      })
+
       require('themery').setup {
         themes = build_themes(),
         livePreview = true,
@@ -69,6 +94,8 @@ return {
       if vim.g.colors_name == nil or vim.g.colors_name == 'default' then
         pcall(vim.cmd.colorscheme, 'tokyonight-moon')
       end
+
+      apply_transparency()
     end,
   },
 }
