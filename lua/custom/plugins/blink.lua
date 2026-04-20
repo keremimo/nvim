@@ -147,9 +147,7 @@ return {
             opts = {
               get_bufnrs = function()
                 return vim.tbl_filter(function(buf)
-                  return vim.api.nvim_buf_is_loaded(buf)
-                    and vim.bo[buf].buftype == ''
-                    and vim.api.nvim_buf_get_name(buf) ~= ''
+                  return vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == '' and vim.api.nvim_buf_get_name(buf) ~= ''
                 end, vim.api.nvim_list_bufs())
               end,
               use_cache = true,

@@ -19,7 +19,6 @@ return {
     'echasnovski/mini.nvim',
     event = 'VeryLazy',
     config = function()
-      require('mini.diff').setup()
       require('mini.surround').setup()
     end,
   },
@@ -27,10 +26,59 @@ return {
   {
     'lewis6991/gitsigns.nvim',
     event = { 'BufReadPost', 'BufNewFile' },
+    init = function()
+      local group = vim.api.nvim_create_augroup('config-gitsigns-highlights', { clear = true })
+
+      local function apply_git_highlights()
+        vim.api.nvim_set_hl(0, 'GitSignsAdd', { fg = '#6ecb63' })
+        vim.api.nvim_set_hl(0, 'GitSignsChange', { fg = '#e5c07b' })
+        vim.api.nvim_set_hl(0, 'GitSignsDelete', { fg = '#e06c75' })
+        vim.api.nvim_set_hl(0, 'GitSignsChangedelete', { fg = '#d19a66' })
+        vim.api.nvim_set_hl(0, 'GitSignsTopdelete', { fg = '#e06c75' })
+        vim.api.nvim_set_hl(0, 'GitSignsUntracked', { fg = '#56b6c2' })
+        vim.api.nvim_set_hl(0, 'GitSignsCurrentLineBlame', { fg = '#7f848e', italic = true })
+      end
+
+      vim.api.nvim_create_autocmd('ColorScheme', {
+        group = group,
+        callback = apply_git_highlights,
+      })
+
+      apply_git_highlights()
+    end,
     opts = {
-      current_line_blame = false,
+      signs = {
+        add = { text = '+', show_count = false },
+        change = { text = '~', show_count = false },
+        delete = { text = '_', show_count = false },
+        topdelete = { text = '_', show_count = false },
+        changedelete = { text = '~', show_count = false },
+        untracked = { text = '+', show_count = false },
+      },
+      signs_staged = {
+        add = { text = '+', show_count = false },
+        change = { text = '~', show_count = false },
+        delete = { text = '_', show_count = false },
+        topdelete = { text = '_', show_count = false },
+        changedelete = { text = '~', show_count = false },
+        untracked = { text = '+', show_count = false },
+      },
+      signs_staged_enable = true,
+      word_diff = true,
+      current_line_blame = true,
       current_line_blame_opts = {
-        delay = 300,
+        virt_text = true,
+        virt_text_pos = 'right_align',
+        delay = 250,
+        ignore_whitespace = false,
+      },
+      current_line_blame_formatter = '<author>, <author_time:%R> - <summary>',
+      preview_config = {
+        border = 'rounded',
+        style = 'minimal',
+        relative = 'cursor',
+        row = 1,
+        col = 0,
       },
       on_attach = function(buffer)
         local gitsigns = require 'gitsigns'
@@ -38,12 +86,36 @@ return {
           vim.keymap.set(mode, lhs, rhs, { buffer = buffer, desc = desc })
         end
 
-        map('n', '<leader>hb', gitsigns.blame_line, 'Git: [B]lame Line')
+        map('n', '<leader>hb', function()
+          gitsigns.blame_line { full = true }
+        end, 'Git: [B]lame Line')
+        map('n', '<leader>hp', gitsigns.preview_hunk, 'Git: [P]review Hunk')
+        map('n', '<leader>hi', gitsigns.preview_hunk_inline, 'Git: Preview [I]nline Hunk')
+        map('n', '<leader>hS', gitsigns.stage_buffer, 'Git: [S]tage Buffer')
+        map('n', '<leader>hR', gitsigns.reset_buffer, 'Git: [R]eset Buffer')
+        map('n', '<leader>hB', gitsigns.blame, 'Git: [B]lame Buffer')
+        map('n', '<leader>hq', gitsigns.setqflist, 'Git: Hunks to [Q]uickfix')
+        map('n', '<leader>hQ', function()
+          gitsigns.setqflist 'all'
+        end, 'Git: Repo hunks to [Q]uickfix')
+        map('n', '<leader>hd', gitsigns.diffthis, 'Git: [D]iff This')
+        map('n', '<leader>hD', function()
+          gitsigns.diffthis '~'
+        end, 'Git: [D]iff Previous')
+
         map('n', '<leader>tb', gitsigns.toggle_current_line_blame, '[T]oggle Git [B]lame')
+        map('n', '<leader>tw', gitsigns.toggle_word_diff, '[T]oggle Git [W]ord Diff')
+
         map('n', ']h', gitsigns.next_hunk, 'Git: Next Hunk')
         map('n', '[h', gitsigns.prev_hunk, 'Git: Previous Hunk')
         map('n', '<leader>hs', gitsigns.stage_hunk, 'Git: [S]tage Hunk')
         map('n', '<leader>hr', gitsigns.reset_hunk, 'Git: [R]eset Hunk')
+        map('v', '<leader>hs', function()
+          gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
+        end, 'Git: [S]tage Hunk')
+        map('v', '<leader>hr', function()
+          gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
+        end, 'Git: [R]eset Hunk')
       end,
     },
   },

@@ -360,6 +360,52 @@ return {
         group = vim.api.nvim_create_augroup('config-lsp-attach', { clear = true }),
         callback = function(event)
           local buffer = event.buf
+          local client = event.data and vim.lsp.get_client_by_id(event.data.client_id) or nil
+
+          local function ensure_single_ts_client()
+            local ft = vim.bo[buffer].filetype
+            if ft ~= 'javascript' and ft ~= 'javascriptreact' and ft ~= 'typescript' and ft ~= 'typescriptreact' then
+              return false
+            end
+
+            local preference = {
+              ts_ls = 1,
+              vtsls = 2,
+              tsserver = 3,
+            }
+
+            local js_ts_clients = {}
+            for _, attached in ipairs(vim.lsp.get_clients { bufnr = buffer }) do
+              if preference[attached.name] ~= nil then
+                table.insert(js_ts_clients, attached)
+              end
+            end
+
+            if #js_ts_clients <= 1 then
+              return false
+            end
+
+            table.sort(js_ts_clients, function(a, b)
+              local pa = preference[a.name] or math.huge
+              local pb = preference[b.name] or math.huge
+              if pa == pb then
+                return a.id < b.id
+              end
+              return pa < pb
+            end)
+
+            local keep = js_ts_clients[1]
+            for i = 2, #js_ts_clients do
+              vim.lsp.buf_detach_client(buffer, js_ts_clients[i].id)
+            end
+
+            return client ~= nil and client.id ~= keep.id
+          end
+
+          if ensure_single_ts_client() then
+            return
+          end
+
           local map = function(keys, func, desc, mode)
             mode = mode or 'n'
             vim.keymap.set(mode, keys, func, { buffer = buffer, desc = desc and ('LSP: ' .. desc) or nil })
@@ -492,7 +538,6 @@ return {
             vim.diagnostic.jump { count = -1, float = true }
           end, 'Previous Diagnostic')
 
-          local client = vim.lsp.get_client_by_id(event.data.client_id)
           if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
             local highlight_group = vim.api.nvim_create_augroup('config-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {

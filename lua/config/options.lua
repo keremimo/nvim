@@ -27,6 +27,7 @@ opt.cmdheight = 0
 opt.list = true
 opt.listchars = { tab = '  ', trail = '·', nbsp = '␣' }
 opt.signcolumn = 'yes'
+opt.statuscolumn = '%l %C%s'
 opt.scrolloff = 10
 opt.mouse = 'a'
 opt.mousemodel = 'extend'
@@ -64,12 +65,10 @@ vim.diagnostic.config {
   underline = true,
   severity_sort = true,
   update_in_insert = false,
-  virtual_text = {
-    spacing = 2,
-    source = 'if_many',
-    prefix = '*',
+  virtual_text = false,
+  virtual_lines = {
+    only_current_line = false,
   },
-  virtual_lines = false,
   float = {
     border = 'rounded',
     source = 'if_many',

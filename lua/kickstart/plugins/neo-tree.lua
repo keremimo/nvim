@@ -14,6 +14,16 @@ return {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
+    source_selector = {
+      winbar = true,
+      statusline = false,
+      show_scrolled_off_parent_node = true,
+      sources = {
+        { source = 'filesystem', display_name = '  Files ' },
+        { source = 'buffers', display_name = '  Buffers ' },
+        { source = 'git_status', display_name = '  Git ' },
+      },
+    },
     filesystem = {
       follow_current_file = {
         enabled = true,
@@ -30,13 +40,16 @@ return {
         hide_gitignored = false,
       },
       window = {
-        width = 20,
+        width = 28,
         position = 'right',
         auto_expand_width = false,
         mappings = {
           ['<cr>'] = 'open',
           ['o'] = 'open',
           ['<S-CR>'] = 'open',
+          ['l'] = 'open',
+          ['h'] = 'close_node',
+          ['H'] = 'navigate_up',
           ['\\'] = 'close_window',
         },
       },

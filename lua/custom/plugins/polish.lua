@@ -8,6 +8,26 @@ return {
       vim.o.foldlevel = 99
       vim.o.foldlevelstart = 99
       vim.o.foldenable = true
+      vim.opt.fillchars:append {
+        foldopen = '',
+        foldclose = '',
+        foldinner = '│',
+        foldsep = '│',
+      }
+
+      local group = vim.api.nvim_create_augroup('config-ufo-fold-style', { clear = true })
+      local function apply_fold_style()
+        vim.api.nvim_set_hl(0, 'FoldColumn', { fg = '#6b7280', bg = 'NONE' })
+        vim.api.nvim_set_hl(0, 'CursorLineFold', { fg = '#9aa3b2', bg = 'NONE', bold = true })
+        vim.api.nvim_set_hl(0, 'Folded', { fg = '#7f8896', bg = 'NONE', italic = true })
+      end
+
+      vim.api.nvim_create_autocmd('ColorScheme', {
+        group = group,
+        callback = apply_fold_style,
+      })
+
+      apply_fold_style()
     end,
     keys = {
       {
@@ -47,6 +67,35 @@ return {
       },
     },
     opts = {
+      fold_virt_text_handler = function(virt_text, _, _, width, truncate)
+        local new_virt_text = {}
+        local suffix = '  ⋯ '
+        local suffix_width = vim.fn.strdisplaywidth(suffix)
+        local target_width = width - suffix_width
+        local current_width = 0
+
+        for _, chunk in ipairs(virt_text) do
+          local chunk_text = chunk[1]
+          local chunk_width = vim.fn.strdisplaywidth(chunk_text)
+
+          if current_width + chunk_width <= target_width then
+            table.insert(new_virt_text, chunk)
+          else
+            chunk_text = truncate(chunk_text, target_width - current_width)
+            table.insert(new_virt_text, { chunk_text, chunk[2] })
+            chunk_width = vim.fn.strdisplaywidth(chunk_text)
+            if current_width + chunk_width < target_width then
+              suffix = suffix .. (' '):rep(target_width - current_width - chunk_width)
+            end
+            break
+          end
+
+          current_width = current_width + chunk_width
+        end
+
+        table.insert(new_virt_text, { suffix, 'UfoFoldedEllipsis' })
+        return new_virt_text
+      end,
       provider_selector = function(_, filetype, buftype)
         if buftype ~= '' then
           return ''

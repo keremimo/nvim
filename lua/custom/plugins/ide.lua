@@ -337,57 +337,67 @@ return {
   },
 
   {
-    'SmiteshP/nvim-navic',
-    event = 'LspAttach',
-    opts = {
-      highlight = true,
-      separator = '  ',
-      depth_limit = 5,
-      lsp = {
-        auto_attach = false,
+    'Bekaboo/dropbar.nvim',
+    event = 'BufReadPost',
+    dependencies = {
+      'nvim-tree/nvim-web-devicons',
+      'nvim-telescope/telescope-fzf-native.nvim',
+    },
+    keys = {
+      {
+        '<leader>;',
+        function()
+          require('dropbar.api').pick()
+        end,
+        desc = 'Winbar: Pick breadcrumb',
+      },
+      {
+        '[;',
+        function()
+          require('dropbar.api').goto_context_start()
+        end,
+        desc = 'Winbar: Context start',
+      },
+      {
+        '];',
+        function()
+          require('dropbar.api').select_next_context()
+        end,
+        desc = 'Winbar: Next context',
       },
     },
-    config = function(_, opts)
-      local navic = require 'nvim-navic'
-      navic.setup(opts)
-
-      local function refresh_winbar()
-        if vim.bo.buftype ~= '' then
-          return
-        end
-        if navic.is_available() then
-          vim.wo.winbar = " %{%v:lua.require'nvim-navic'.get_location()%}"
-        else
-          vim.wo.winbar = ''
-        end
-      end
-
-      local navic_group = vim.api.nvim_create_augroup('config-navic', { clear = true })
-
-      vim.api.nvim_create_autocmd('LspAttach', {
-        group = navic_group,
-        callback = function(args)
-          local client = vim.lsp.get_client_by_id(args.data.client_id)
-          if client and client.server_capabilities.documentSymbolProvider then
-            navic.attach(client, args.buf)
-            refresh_winbar()
+    opts = {
+      bar = {
+        padding = {
+          left = 1,
+          right = 1,
+        },
+        enable = function(buf, win, _)
+          if not vim.api.nvim_buf_is_valid(buf) or not vim.api.nvim_win_is_valid(win) then
+            return false
           end
+          if vim.fn.win_gettype(win) ~= '' then
+            return false
+          end
+
+          local ft = vim.bo[buf].filetype
+          local bt = vim.bo[buf].buftype
+          if
+            ft == 'neo-tree'
+            or ft == 'trouble'
+            or ft == 'qf'
+            or ft == 'help'
+            or ft == 'lazy'
+            or ft == 'mason'
+            or ft == 'toggleterm'
+          then
+            return false
+          end
+
+          return bt == ''
         end,
-      })
-
-      local current = vim.api.nvim_get_current_buf()
-      for _, client in ipairs(vim.lsp.get_clients { bufnr = current }) do
-        if client.server_capabilities.documentSymbolProvider then
-          navic.attach(client, current)
-          break
-        end
-      end
-
-      vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter', 'CursorHold', 'InsertLeave' }, {
-        group = navic_group,
-        callback = refresh_winbar,
-      })
-    end,
+      },
+    },
   },
 
   {
@@ -553,18 +563,45 @@ return {
       { '<leader>bc', '<cmd>bdelete<CR>', desc = '[B]uffer: [C]lose current' },
       { '<leader>bo', '<cmd>BufferLineCloseOthers<CR>', desc = '[B]uffer: Close [O]thers' },
       { '<leader>bP', '<cmd>BufferLinePick<CR>', desc = '[B]uffer: [P]ick' },
+      { '<leader>b,', '<cmd>BufferLineMovePrev<CR>', desc = '[B]uffer: Move left' },
+      { '<leader>b.', '<cmd>BufferLineMoveNext<CR>', desc = '[B]uffer: Move right' },
+      { '<leader>bl', '<cmd>BufferLineCloseLeft<CR>', desc = '[B]uffer: Close [L]eft' },
+      { '<leader>br', '<cmd>BufferLineCloseRight<CR>', desc = '[B]uffer: Close [R]ight' },
     },
     opts = {
       options = {
         mode = 'buffers',
+        numbers = 'ordinal',
         diagnostics = 'nvim_lsp',
+        diagnostics_indicator = function(count, level, _, context)
+          if context.buffer:current() then
+            return ''
+          end
+          local icon = level:match 'error' and ' ' or ' '
+          return icon .. count
+        end,
+        indicator = {
+          icon = '▎',
+          style = 'icon',
+        },
+        hover = {
+          enabled = true,
+          delay = 120,
+          reveal = { 'close' },
+        },
         separator_style = 'slant',
-        show_buffer_close_icons = false,
+        max_name_length = 28,
+        max_prefix_length = 18,
+        truncate_names = true,
+        tab_size = 22,
+        always_show_bufferline = true,
+        show_buffer_close_icons = true,
         show_close_icon = false,
+        sort_by = 'insert_after_current',
         offsets = {
           {
             filetype = 'neo-tree',
-            text = 'Explorer',
+            text = '  Explorer',
             text_align = 'left',
             separator = true,
           },
@@ -710,26 +747,6 @@ return {
   },
 
   {
-    'kosayoda/nvim-lightbulb',
-    event = 'LspAttach',
-    opts = {
-      autocmd = {
-        enabled = true,
-      },
-      sign = {
-        enabled = true,
-        text = '>',
-      },
-      virtual_text = {
-        enabled = false,
-      },
-    },
-    config = function(_, opts)
-      require('nvim-lightbulb').setup(opts)
-    end,
-  },
-
-  {
     'rcarriga/nvim-notify',
     event = 'VeryLazy',
     opts = {
@@ -759,6 +776,12 @@ return {
       lsp = {
         progress = {
           enabled = true,
+        },
+        hover = {
+          enabled = false,
+        },
+        signature = {
+          enabled = false,
         },
       },
       presets = {
