@@ -23,3 +23,48 @@ vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold', 'CursorHo
     vim.cmd 'checktime'
   end,
 })
+
+local large_file_group = vim.api.nvim_create_augroup('config-large-file', { clear = true })
+local max_large_file_size = 1024 * 1024
+local uv = vim.uv or vim.loop
+
+vim.api.nvim_create_autocmd('BufReadPre', {
+  desc = 'Enable large-file safeguards',
+  group = large_file_group,
+  callback = function(args)
+    local buf = args.buf
+    if vim.bo[buf].buftype ~= '' then
+      return
+    end
+
+    local path = vim.api.nvim_buf_get_name(buf)
+    if path == '' then
+      return
+    end
+
+    local stat = uv.fs_stat(path)
+    if not stat or stat.size <= max_large_file_size then
+      return
+    end
+
+    vim.b[buf].large_file = true
+    vim.bo[buf].swapfile = false
+    vim.bo[buf].undofile = false
+    vim.bo[buf].synmaxcol = 200
+    vim.bo[buf].foldmethod = 'manual'
+  end,
+})
+
+vim.api.nvim_create_autocmd('BufReadPost', {
+  desc = 'Disable expensive features for large files',
+  group = large_file_group,
+  callback = function(args)
+    local buf = args.buf
+    if not vim.b[buf].large_file then
+      return
+    end
+
+    pcall(vim.treesitter.stop, buf)
+    vim.diagnostic.enable(false, { bufnr = buf })
+  end,
+})

@@ -32,7 +32,6 @@ map('n', '<C-e>', '<Cmd>Neotree toggle<CR>', { silent = true, desc = 'Toggle Neo
 map('n', '<leader>w', smart_split, { desc = 'Smart split (auto h/v)' })
 map('n', '<C-q>', '<Cmd>q<CR>', { silent = true, desc = 'Quit window' })
 map({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>w<CR><ESC>', { silent = true, desc = 'Save file' })
-map('n', '<C-g>', '<Cmd>LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
 map('n', '<leader>gg', '<Cmd>LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
 
 -- Colemak-style cursor movement

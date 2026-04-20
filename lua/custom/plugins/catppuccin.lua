@@ -46,12 +46,14 @@ return {
           NeoTreeFileNameOpened = { fg = colors.yellow, style = { 'bold' } },
         }
       end,
-      default_integrations = true,
+      default_integrations = false,
       integrations = {
-        cmp = true,
-        nvimtree = true,
+        blink_cmp = true,
+        flash = true,
+        gitsigns = true,
+        neotree = true,
+        telescope = true,
         treesitter = true,
-        notify = false,
         mini = {
           enabled = true,
           indentscope_color = '',
