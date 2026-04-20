@@ -1,6 +1,14 @@
 local g = vim.g
 local opt = vim.opt
 
+-- Compatibility shim for plugins that still call vim.tbl_flatten on Neovim 0.12+.
+if vim.iter then
+  ---@diagnostic disable-next-line: duplicate-set-field
+  vim.tbl_flatten = function(tbl)
+    return vim.iter(tbl):flatten(math.huge):totable()
+  end
+end
+
 -- Leaders and global toggles
 g.mapleader = ' '
 g.maplocalleader = ' '
