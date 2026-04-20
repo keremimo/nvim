@@ -28,6 +28,30 @@ function M.setup()
     rocks = {
       enabled = false,
     },
+    performance = {
+      rtp = {
+        disabled_plugins = {
+          '2html_plugin',
+          'getscript',
+          'getscriptPlugin',
+          'gzip',
+          'logipat',
+          'netrw',
+          'netrwPlugin',
+          'netrwSettings',
+          'netrwFileHandlers',
+          'rrhelper',
+          'tar',
+          'tarPlugin',
+          'tohtml',
+          'tutor',
+          'vimball',
+          'vimballPlugin',
+          'zip',
+          'zipPlugin',
+        },
+      },
+    },
     ui = {
       icons = vim.g.have_nerd_font and {} or {
         cmd = '⌘',

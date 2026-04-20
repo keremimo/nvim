@@ -1,7 +1,7 @@
 return {
   {
     'folke/which-key.nvim',
-    event = 'VimEnter',
+    event = 'VeryLazy',
     opts = {
       icons = {
         mappings = vim.g.have_nerd_font,
@@ -41,7 +41,6 @@ return {
         { '<leader>d', group = '[D]ocument' },
         { '<leader>r', group = '[R]ename' },
         { '<leader>s', group = '[S]earch' },
-        { '<leader>w', group = '[W]orkspace' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
       },
@@ -50,8 +49,49 @@ return {
 
   {
     'nvim-telescope/telescope.nvim',
-    event = 'VimEnter',
+    cmd = 'Telescope',
     branch = '0.1.x',
+    keys = {
+      { '<leader>sh', function() require('telescope.builtin').help_tags() end, desc = '[S]earch [H]elp' },
+      { '<leader>sk', function() require('telescope.builtin').keymaps() end, desc = '[S]earch [K]eymaps' },
+      { '<leader>sf', function() require('telescope.builtin').find_files() end, desc = '[S]earch [F]iles' },
+      { '<leader>ss', function() require('telescope.builtin').builtin() end, desc = '[S]elect Telescope' },
+      { '<leader>sw', function() require('telescope.builtin').grep_string() end, desc = '[S]earch current [W]ord' },
+      { '<leader>sg', function() require('telescope.builtin').live_grep() end, desc = '[S]earch by [G]rep' },
+      { '<leader>sd', function() require('telescope.builtin').diagnostics() end, desc = '[S]earch [D]iagnostics' },
+      { '<leader>sr', function() require('telescope.builtin').resume() end, desc = '[S]earch [R]esume' },
+      { '<leader>s.', function() require('telescope.builtin').oldfiles() end, desc = '[S]earch Recent Files' },
+      { '<leader><leader>', function() require('telescope.builtin').buffers() end, desc = 'Find existing buffers' },
+      {
+        '<leader>/',
+        function()
+          local builtin = require 'telescope.builtin'
+          local themes = require 'telescope.themes'
+          builtin.current_buffer_fuzzy_find(themes.get_dropdown {
+            winblend = 10,
+            previewer = false,
+          })
+        end,
+        desc = 'Fuzzy search in buffer',
+      },
+      {
+        '<leader>s/',
+        function()
+          require('telescope.builtin').live_grep {
+            grep_open_files = true,
+            prompt_title = 'Live Grep in Open Files',
+          }
+        end,
+        desc = 'Grep open files',
+      },
+      {
+        '<leader>sn',
+        function()
+          require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' }
+        end,
+        desc = 'Search Neovim config',
+      },
+    },
     dependencies = {
       'nvim-lua/plenary.nvim',
       {
@@ -77,39 +117,6 @@ return {
 
       pcall(telescope.load_extension, 'fzf')
       pcall(telescope.load_extension, 'ui-select')
-
-      local builtin = require 'telescope.builtin'
-      local themes = require 'telescope.themes'
-      local map = vim.keymap.set
-
-      map('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
-      map('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      map('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-      map('n', '<leader>ss', builtin.builtin, { desc = '[S]elect Telescope' })
-      map('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      map('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
-      map('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
-      map('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
-      map('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files' })
-      map('n', '<leader><leader>', builtin.buffers, { desc = 'Find existing buffers' })
-
-      map('n', '<leader>/', function()
-        builtin.current_buffer_fuzzy_find(themes.get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, { desc = 'Fuzzy search in buffer' })
-
-      map('n', '<leader>s/', function()
-        builtin.live_grep {
-          grep_open_files = true,
-          prompt_title = 'Live Grep in Open Files',
-        }
-      end, { desc = 'Grep open files' })
-
-      map('n', '<leader>sn', function()
-        builtin.find_files { cwd = vim.fn.stdpath 'config' }
-      end, { desc = 'Search Neovim config' })
     end,
   },
 }
