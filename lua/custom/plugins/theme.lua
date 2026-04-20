@@ -35,23 +35,6 @@ local function build_themes()
   return themes
 end
 
-local function apply_transparency()
-  local groups = vim.fn.getcompletion('', 'highlight')
-  for _, group in ipairs(groups) do
-    local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = group, link = false })
-    if ok and type(hl) == 'table' then
-      hl.bg = 'NONE'
-      hl.ctermbg = 'NONE'
-      pcall(vim.api.nvim_set_hl, 0, group, hl)
-    end
-  end
-
-  pcall(vim.api.nvim_set_hl, 0, 'Normal', { bg = 'NONE', ctermbg = 'NONE' })
-  pcall(vim.api.nvim_set_hl, 0, 'NormalFloat', { bg = 'NONE', ctermbg = 'NONE' })
-  pcall(vim.api.nvim_set_hl, 0, 'NeoTreeNormal', { bg = 'NONE', ctermbg = 'NONE' })
-  pcall(vim.api.nvim_set_hl, 0, 'NeoTreeNormalNC', { bg = 'NONE', ctermbg = 'NONE' })
-end
-
 return {
   -- Theme pack
   { 'folke/tokyonight.nvim', lazy = false, priority = 1000 },
@@ -78,17 +61,6 @@ return {
     lazy = false,
     priority = 999,
     config = function()
-      local transparency_group = vim.api.nvim_create_augroup('config-global-transparency', { clear = true })
-      vim.api.nvim_create_autocmd('ColorScheme', {
-        group = transparency_group,
-        callback = apply_transparency,
-      })
-      vim.api.nvim_create_autocmd('FileType', {
-        group = transparency_group,
-        pattern = { 'neo-tree', 'neo-tree-popup' },
-        callback = apply_transparency,
-      })
-
       require('themery').setup {
         themes = build_themes(),
         livePreview = true,
@@ -97,8 +69,6 @@ return {
       if vim.g.colors_name == nil or vim.g.colors_name == 'default' then
         pcall(vim.cmd.colorscheme, 'tokyonight-moon')
       end
-
-      apply_transparency()
     end,
   },
 }
