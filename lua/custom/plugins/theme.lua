@@ -36,22 +36,20 @@ local function build_themes()
 end
 
 local function apply_transparency()
-  local groups = {
-    'Normal',
-    'NormalNC',
-    'SignColumn',
-    'EndOfBuffer',
-    'FoldColumn',
-    'NormalFloat',
-    'FloatBorder',
-    'Pmenu',
-    'TelescopeNormal',
-    'TelescopeBorder',
-  }
-
+  local groups = vim.fn.getcompletion('', 'highlight')
   for _, group in ipairs(groups) do
-    vim.api.nvim_set_hl(0, group, { bg = 'NONE', ctermbg = 'NONE' })
+    local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = group, link = false })
+    if ok and type(hl) == 'table' then
+      hl.bg = 'NONE'
+      hl.ctermbg = 'NONE'
+      pcall(vim.api.nvim_set_hl, 0, group, hl)
+    end
   end
+
+  pcall(vim.api.nvim_set_hl, 0, 'Normal', { bg = 'NONE', ctermbg = 'NONE' })
+  pcall(vim.api.nvim_set_hl, 0, 'NormalFloat', { bg = 'NONE', ctermbg = 'NONE' })
+  pcall(vim.api.nvim_set_hl, 0, 'NeoTreeNormal', { bg = 'NONE', ctermbg = 'NONE' })
+  pcall(vim.api.nvim_set_hl, 0, 'NeoTreeNormalNC', { bg = 'NONE', ctermbg = 'NONE' })
 end
 
 return {
@@ -83,6 +81,11 @@ return {
       local transparency_group = vim.api.nvim_create_augroup('config-global-transparency', { clear = true })
       vim.api.nvim_create_autocmd('ColorScheme', {
         group = transparency_group,
+        callback = apply_transparency,
+      })
+      vim.api.nvim_create_autocmd('FileType', {
+        group = transparency_group,
+        pattern = { 'neo-tree', 'neo-tree-popup' },
         callback = apply_transparency,
       })
 
