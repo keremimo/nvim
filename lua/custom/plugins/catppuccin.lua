@@ -51,6 +51,7 @@ return {
         blink_cmp = true,
         flash = true,
         gitsigns = true,
+        lualine = true,
         neotree = true,
         telescope = true,
         treesitter = true,
