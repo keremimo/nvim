@@ -204,7 +204,23 @@ return {
       'williamboman/mason.nvim',
       'williamboman/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      { 'j-hui/fidget.nvim', opts = {} },
+      {
+        'j-hui/fidget.nvim',
+        opts = {
+          progress = {
+            display = {
+              done_icon = 'OK',
+            },
+          },
+          notification = {
+            override_vim_notify = false,
+            window = {
+              normal_hl = 'NormalFloat',
+              winblend = 0,
+            },
+          },
+        },
+      },
       {
         'antosha417/nvim-lsp-file-operations',
         dependencies = {
@@ -348,17 +364,90 @@ return {
             mode = mode or 'n'
             vim.keymap.set(mode, keys, func, { buffer = buffer, desc = desc and ('LSP: ' .. desc) or nil })
           end
+
           local telescope_lsp = function(method)
             return function()
               require('telescope.builtin')[method]()
             end
           end
 
-          map('gd', telescope_lsp 'lsp_definitions', '[G]oto [D]efinition')
-          map('gr', telescope_lsp 'lsp_references', '[G]oto [R]eferences')
-          map('gi', telescope_lsp 'lsp_implementations', '[G]oto [I]mplementation')
-          map('gI', telescope_lsp 'lsp_implementations', '[G]oto [I]mplementation')
-          map('<leader>D', telescope_lsp 'lsp_type_definitions', 'Type [D]efinition')
+          local glance_or_telescope = function(glance_method, telescope_method)
+            return function()
+              local ok_glance, glance = pcall(require, 'glance')
+              if ok_glance and glance and glance.actions then
+                glance.actions.open(glance_method, {
+                  hooks = {
+                    before_open = function(results, open, jump)
+                      if results and #results == 1 then
+                        jump(results[1])
+                        return
+                      end
+                      open(results)
+                    end,
+                  },
+                })
+                return
+              end
+
+              require('telescope.builtin')[telescope_method]()
+            end
+          end
+
+          local declaration_or_jump = function()
+            local params = vim.lsp.util.make_position_params()
+            vim.lsp.buf_request_all(buffer, 'textDocument/declaration', params, function(results)
+              local locations = {}
+
+              for client_id, client_result in pairs(results or {}) do
+                local result = client_result and client_result.result
+                if result then
+                  local client = vim.lsp.get_client_by_id(client_id)
+                  local offset_encoding = client and client.offset_encoding or 'utf-16'
+                  if vim.tbl_islist(result) then
+                    for _, loc in ipairs(result) do
+                      table.insert(locations, { location = loc, offset_encoding = offset_encoding })
+                    end
+                  else
+                    table.insert(locations, { location = result, offset_encoding = offset_encoding })
+                  end
+                end
+              end
+
+              if #locations == 0 then
+                vim.notify('No declaration found', vim.log.levels.INFO)
+                return
+              end
+
+              if #locations == 1 then
+                vim.lsp.util.jump_to_location(locations[1].location, locations[1].offset_encoding)
+                return
+              end
+
+              local items = {}
+              for _, entry in ipairs(locations) do
+                local qf_items = vim.lsp.util.locations_to_items({ entry.location }, entry.offset_encoding)
+                vim.list_extend(items, qf_items)
+              end
+
+              vim.fn.setqflist({}, ' ', {
+                title = 'LSP Declarations',
+                items = items,
+              })
+
+              local ok_trouble = pcall(require, 'trouble')
+              if ok_trouble then
+                vim.cmd 'Trouble qflist toggle focus=true'
+                return
+              end
+              vim.cmd 'copen'
+            end)
+          end
+
+          map('gd', glance_or_telescope('definitions', 'lsp_definitions'), '[G]oto [D]efinition')
+          map('gr', glance_or_telescope('references', 'lsp_references'), '[G]oto [R]eferences')
+          map('gi', glance_or_telescope('implementations', 'lsp_implementations'), '[G]oto [I]mplementation')
+          map('gI', glance_or_telescope('implementations', 'lsp_implementations'), '[G]oto [I]mplementation')
+          map('<leader>D', glance_or_telescope('type_definitions', 'lsp_type_definitions'), 'Type [D]efinition')
           map('<leader>ds', telescope_lsp 'lsp_document_symbols', '[D]ocument [S]ymbols')
           map('<leader>sW', telescope_lsp 'lsp_dynamic_workspace_symbols', '[S]earch [W]orkspace Symbols')
           if vim.fn.exists ':IncRename' == 2 then
@@ -380,7 +469,7 @@ return {
             end
             vim.lsp.buf.code_action()
           end, '[C]ode [A]ction', { 'n', 'x' })
-          map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+          map('gD', declaration_or_jump, '[G]oto [D]eclaration')
           map('K', vim.lsp.buf.hover, 'Hover Documentation')
           map('gK', vim.lsp.buf.signature_help, 'Signature Help')
           map('<leader>cwa', vim.lsp.buf.add_workspace_folder, '[C]ode [W]orkspace: [A]dd Folder')
@@ -460,6 +549,12 @@ return {
       if opts.capabilities then
         capabilities = vim.tbl_deep_extend('force', capabilities, opts.capabilities)
       end
+
+      capabilities.textDocument = capabilities.textDocument or {}
+      capabilities.textDocument.foldingRange = {
+        dynamicRegistration = false,
+        lineFoldingOnly = true,
+      }
 
       local servers = opts.servers or {}
       local global_defaults = vim.lsp.config['*'] or {}

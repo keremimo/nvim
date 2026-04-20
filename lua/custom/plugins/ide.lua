@@ -37,7 +37,18 @@ return {
       { '<F11>', function() require('dap').step_into() end, desc = 'Debug: Step Into' },
       { '<F12>', function() require('dap').step_out() end, desc = 'Debug: Step Out' },
       { '<leader>dc', function() require('dap').continue() end, desc = 'Debug: Continue' },
-      { '<leader>db', function() require('dap').toggle_breakpoint() end, desc = 'Debug: Toggle Breakpoint' },
+      {
+        '<leader>db',
+        function()
+          local ok, pb = pcall(require, 'persistent-breakpoints.api')
+          if ok then
+            pb.toggle_breakpoint()
+            return
+          end
+          require('dap').toggle_breakpoint()
+        end,
+        desc = 'Debug: Toggle Breakpoint',
+      },
       {
         '<leader>dB',
         function()
@@ -526,5 +537,352 @@ return {
       { '[x', '<Plug>(git-conflict-prev-conflict)', desc = 'Git conflict: previous', remap = true },
       { '<leader>gx', '<cmd>GitConflictListQf<CR>', desc = '[G]it conflict list' },
     },
+  },
+
+  {
+    'akinsho/bufferline.nvim',
+    version = '*',
+    event = 'VeryLazy',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    keys = {
+      { '<S-h>', '<cmd>BufferLineCyclePrev<CR>', desc = 'Buffer: Previous' },
+      { '<S-l>', '<cmd>BufferLineCycleNext<CR>', desc = 'Buffer: Next' },
+      { '[b', '<cmd>BufferLineCyclePrev<CR>', desc = 'Buffer: Previous' },
+      { ']b', '<cmd>BufferLineCycleNext<CR>', desc = 'Buffer: Next' },
+      { '<leader>bp', '<cmd>BufferLineTogglePin<CR>', desc = '[B]uffer: Toggle [P]in' },
+      { '<leader>bc', '<cmd>bdelete<CR>', desc = '[B]uffer: [C]lose current' },
+      { '<leader>bo', '<cmd>BufferLineCloseOthers<CR>', desc = '[B]uffer: Close [O]thers' },
+      { '<leader>bP', '<cmd>BufferLinePick<CR>', desc = '[B]uffer: [P]ick' },
+    },
+    opts = {
+      options = {
+        mode = 'buffers',
+        diagnostics = 'nvim_lsp',
+        separator_style = 'slant',
+        show_buffer_close_icons = false,
+        show_close_icon = false,
+        offsets = {
+          {
+            filetype = 'neo-tree',
+            text = 'Explorer',
+            text_align = 'left',
+            separator = true,
+          },
+        },
+      },
+    },
+  },
+
+  {
+    'MagicDuck/grug-far.nvim',
+    cmd = 'GrugFar',
+    opts = {},
+    keys = {
+      {
+        '<leader>sR',
+        function()
+          require('grug-far').open()
+        end,
+        desc = '[S]earch and [R]eplace (project)',
+      },
+      {
+        '<leader>sF',
+        function()
+          require('grug-far').open {
+            prefills = {
+              paths = vim.fn.expand '%',
+            },
+          }
+        end,
+        desc = '[S]earch and replace current [F]ile',
+      },
+    },
+  },
+
+  {
+    'ThePrimeagen/refactoring.nvim',
+    cmd = 'Refactor',
+    keys = {
+      {
+        '<leader>cR',
+        function()
+          require('refactoring').select_refactor()
+        end,
+        mode = { 'n', 'x' },
+        desc = '[C]ode [R]efactor',
+      },
+      {
+        '<leader>ce',
+        function()
+          require('refactoring').refactor 'Extract Function'
+        end,
+        mode = 'x',
+        desc = '[C]ode: [E]xtract function',
+      },
+      {
+        '<leader>cf',
+        function()
+          require('refactoring').refactor 'Extract Function To File'
+        end,
+        mode = 'x',
+        desc = '[C]ode: Extract to [F]ile',
+      },
+      {
+        '<leader>cv',
+        function()
+          require('refactoring').refactor 'Extract Variable'
+        end,
+        mode = 'x',
+        desc = '[C]ode: Extract [V]ariable',
+      },
+      {
+        '<leader>cI',
+        function()
+          require('refactoring').refactor 'Inline Variable'
+        end,
+        mode = { 'n', 'x' },
+        desc = '[C]ode: [I]nline variable',
+      },
+    },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+      'nvim-telescope/telescope.nvim',
+    },
+    config = function()
+      require('refactoring').setup {}
+      pcall(function()
+        require('telescope').load_extension 'refactoring'
+      end)
+    end,
+  },
+
+  {
+    'Weissle/persistent-breakpoints.nvim',
+    event = 'BufReadPost',
+    opts = {
+      load_breakpoints_event = { 'BufReadPost' },
+    },
+    keys = {
+      {
+        '<leader>dS',
+        function()
+          require('persistent-breakpoints.api').save_breakpoints()
+        end,
+        desc = 'Debug: [S]ave breakpoints',
+      },
+      {
+        '<leader>dR',
+        function()
+          require('persistent-breakpoints.api').load_breakpoints()
+        end,
+        desc = 'Debug: [R]eload breakpoints',
+      },
+      {
+        '<leader>dX',
+        function()
+          require('persistent-breakpoints.api').clear_all_breakpoints()
+        end,
+        desc = 'Debug: Clear all breakpoints',
+      },
+    },
+  },
+
+  {
+    'andythigpen/nvim-coverage',
+    cmd = {
+      'Coverage',
+      'CoverageLoad',
+      'CoverageShow',
+      'CoverageHide',
+      'CoverageToggle',
+      'CoverageSummary',
+    },
+    keys = {
+      { '<leader>nC', '<cmd>CoverageLoad<CR>', desc = '[N]eotest: Load [C]overage' },
+      { '<leader>nt', '<cmd>CoverageToggle<CR>', desc = '[N]eotest: [T]oggle coverage' },
+      { '<leader>nc', '<cmd>CoverageSummary<CR>', desc = '[N]eotest: [C]overage summary' },
+    },
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = {
+      auto_reload = true,
+    },
+  },
+
+  {
+    'kosayoda/nvim-lightbulb',
+    event = 'LspAttach',
+    opts = {
+      autocmd = {
+        enabled = true,
+      },
+      sign = {
+        enabled = true,
+        text = '>',
+      },
+      virtual_text = {
+        enabled = false,
+      },
+    },
+    config = function(_, opts)
+      require('nvim-lightbulb').setup(opts)
+    end,
+  },
+
+  {
+    'rcarriga/nvim-notify',
+    event = 'VeryLazy',
+    opts = {
+      timeout = 3000,
+      stages = 'fade_in_slide_out',
+      render = 'wrapped-compact',
+      max_width = function()
+        return math.floor(vim.o.columns * 0.4)
+      end,
+    },
+    config = function(_, opts)
+      local notify = require 'notify'
+      notify.setup(opts)
+      vim.notify = notify
+    end,
+  },
+
+  {
+    'folke/noice.nvim',
+    event = 'VeryLazy',
+    cmd = 'Noice',
+    dependencies = {
+      'MunifTanjim/nui.nvim',
+      'rcarriga/nvim-notify',
+    },
+    opts = {
+      lsp = {
+        progress = {
+          enabled = true,
+        },
+      },
+      presets = {
+        bottom_search = true,
+        command_palette = true,
+        long_message_to_split = true,
+        inc_rename = true,
+        lsp_doc_border = true,
+      },
+    },
+    keys = {
+      { '<leader>xn', '<cmd>Noice history<CR>', desc = 'Diagnostics: [N]otification history' },
+      { '<leader>xm', '<cmd>Noice last<CR>', desc = 'Diagnostics: Last [M]essage' },
+      { '<leader>xd', '<cmd>Noice dismiss<CR>', desc = 'Diagnostics: [D]ismiss messages' },
+    },
+  },
+
+  {
+    'tpope/vim-dadbod',
+    cmd = { 'DB', 'DBUI', 'DBUIToggle', 'DBUIAddConnection', 'DBUIFindBuffer' },
+    dependencies = {
+      {
+        'kristijanhusak/vim-dadbod-ui',
+        cmd = { 'DBUI', 'DBUIToggle', 'DBUIAddConnection', 'DBUIFindBuffer' },
+      },
+      {
+        'kristijanhusak/vim-dadbod-completion',
+        ft = { 'sql', 'mysql', 'plsql' },
+      },
+    },
+    init = function()
+      vim.g.db_ui_use_nerd_fonts = vim.g.have_nerd_font and 1 or 0
+      vim.g.db_ui_save_location = vim.fn.stdpath 'data' .. '/db_ui'
+    end,
+    keys = {
+      { '<leader>md', '<cmd>DBUIToggle<CR>', desc = '[M]ake: [D]atabase UI' },
+    },
+  },
+
+  {
+    'rest-nvim/rest.nvim',
+    ft = { 'http' },
+    cmd = 'Rest',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    keys = {
+      { '<localleader>rr', '<cmd>Rest run<CR>', ft = 'http', desc = 'HTTP: [R]un request' },
+      { '<localleader>rl', '<cmd>Rest run last<CR>', ft = 'http', desc = 'HTTP: Run [L]ast request' },
+      { '<localleader>rp', '<cmd>Rest run preview<CR>', ft = 'http', desc = 'HTTP: [P]review request' },
+    },
+    opts = {
+      result = {
+        show_url = true,
+        show_http_info = true,
+        show_headers = true,
+      },
+    },
+  },
+
+  {
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    event = 'VeryLazy',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    keys = {
+      {
+        '<leader>ja',
+        function()
+          require('harpoon'):list():add()
+        end,
+        desc = '[J]ump list: [A]dd file',
+      },
+      {
+        '<leader>jj',
+        function()
+          local harpoon = require 'harpoon'
+          harpoon.ui:toggle_quick_menu(harpoon:list())
+        end,
+        desc = '[J]ump list: Toggle menu',
+      },
+      {
+        '<leader>j1',
+        function()
+          require('harpoon'):list():select(1)
+        end,
+        desc = '[J]ump list: file 1',
+      },
+      {
+        '<leader>j2',
+        function()
+          require('harpoon'):list():select(2)
+        end,
+        desc = '[J]ump list: file 2',
+      },
+      {
+        '<leader>j3',
+        function()
+          require('harpoon'):list():select(3)
+        end,
+        desc = '[J]ump list: file 3',
+      },
+      {
+        '<leader>j4',
+        function()
+          require('harpoon'):list():select(4)
+        end,
+        desc = '[J]ump list: file 4',
+      },
+      {
+        '<leader>jn',
+        function()
+          require('harpoon'):list():next()
+        end,
+        desc = '[J]ump list: [N]ext',
+      },
+      {
+        '<leader>jp',
+        function()
+          require('harpoon'):list():prev()
+        end,
+        desc = '[J]ump list: [P]revious',
+      },
+    },
+    config = function()
+      require('harpoon'):setup()
+    end,
   },
 }
