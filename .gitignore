@@ -4,3 +4,5 @@ test.sh
 nvim
 
 spell/
+.nvimlog
+nvim.log

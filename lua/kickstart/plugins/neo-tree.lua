@@ -43,6 +43,29 @@ return {
     },
   },
   config = function(_, opts)
+    local function follow_current_file()
+      local buf = vim.api.nvim_get_current_buf()
+      if not buf or not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+
+      local filetype = vim.bo[buf].filetype
+      if filetype == 'neo-tree' or filetype == 'neo-tree-popup' then
+        return
+      end
+      if vim.bo[buf].buftype ~= '' then
+        return
+      end
+      if vim.api.nvim_buf_get_name(buf) == '' then
+        return
+      end
+
+      local ok, filesystem = pcall(require, 'neo-tree.sources.filesystem')
+      if ok and type(filesystem.follow) == 'function' then
+        filesystem.follow()
+      end
+    end
+
     local function has_neotree_in_tab(tab)
       for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
         local buf = vim.api.nvim_win_get_buf(win)
@@ -64,7 +87,7 @@ return {
 
     local function show_neotree_without_focus()
       local original_win = vim.api.nvim_get_current_win()
-      local ok = pcall(vim.cmd, 'Neotree focus')
+      local ok = pcall(vim.cmd, 'Neotree reveal')
       if not ok then
         return
       end
@@ -94,6 +117,16 @@ return {
     })
 
     require('neo-tree').setup(opts)
+    do
+      local ok_manager, manager = pcall(require, 'neo-tree.sources.manager')
+      local ok_events, events = pcall(require, 'neo-tree.events')
+      if ok_manager and ok_events and type(manager.unsubscribe) == 'function' then
+        manager.unsubscribe('filesystem', {
+          event = events.VIM_BUFFER_ENTER,
+          id = 'filesystem.vim_buffer_enter',
+        })
+      end
+    end
 
     local group = vim.api.nvim_create_augroup('NeoTreeStickyTabs', { clear = true })
     vim.api.nvim_create_autocmd({ 'TabNewEntered', 'TabEnter' }, {
@@ -107,6 +140,21 @@ return {
         end
         show_neotree_without_focus()
       end,
+    })
+
+    vim.api.nvim_create_autocmd('BufEnter', {
+      group = group,
+      callback = function(args)
+        local buf = args.buf
+        if not buf or not vim.api.nvim_buf_is_valid(buf) then
+          return
+        end
+        if vim.bo[buf].filetype == 'neo-tree' or vim.bo[buf].filetype == 'neo-tree-popup' then
+          return
+        end
+        follow_current_file()
+      end,
+      desc = 'Follow the current file in Neo-tree without reacting to BufWinEnter noise',
     })
 
     vim.api.nvim_create_autocmd('VimResized', {

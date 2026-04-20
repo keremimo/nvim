@@ -85,7 +85,7 @@ return {
 
       local function show_neotree_without_focus()
         local original_win = vim.api.nvim_get_current_win()
-        local ok = pcall(vim.cmd, 'Neotree focus')
+        local ok = pcall(vim.cmd, 'Neotree reveal')
         if not ok then
           return false
         end

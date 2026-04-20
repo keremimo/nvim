@@ -25,6 +25,9 @@ function M.setup()
     require('kickstart.plugins.neo-tree'),
     { import = 'custom.plugins' },
   }, {
+    rocks = {
+      enabled = false,
+    },
     ui = {
       icons = vim.g.have_nerd_font and {} or {
         cmd = '⌘',

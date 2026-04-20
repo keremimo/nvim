@@ -1,41 +1,9 @@
 return {
-  {
-    'CRAG666/code_runner.nvim',
-    cmd = { 'RunCode', 'RunFile', 'RunProject', 'RunClose', 'CrStopHr' },
-    opts = {
-      mode = 'float',
-      float = { border = 'single' },
-      focus = true,
-      startinsert = true,
-      filetype = {
-        go = { 'cd $dir &&', 'go run .' },
-      },
-    },
-    config = function(_, opts)
-      require('code_runner').setup(opts)
-    end,
-  },
-
-  {
-    'CRAG666/betterTerm.nvim',
-    event = 'VeryLazy',
-    opts = {
-      prefix = 'CRAG',
-      startInserted = true,
-      position = 'right',
-      size = 80,
-      jump_tab_mapping = '<A-$tab>',
-    },
-    config = function(_, opts)
-      require('betterTerm').setup(opts)
-    end,
-  },
-
   'tpope/vim-sleuth',
 
   {
     'folke/todo-comments.nvim',
-    event = 'VimEnter',
+    event = { 'BufReadPost', 'BufNewFile' },
     dependencies = { 'nvim-lua/plenary.nvim' },
     opts = { signs = false },
   },
@@ -79,7 +47,7 @@ return {
     opts = {
       options = {
         icons_enabled = true,
-        theme = 'catppuccin',
+        theme = 'catppuccin-nvim',
         component_separators = { left = '', right = '' },
         section_separators = { left = '', right = '' },
         disabled_filetypes = {
