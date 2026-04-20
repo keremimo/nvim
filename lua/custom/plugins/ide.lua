@@ -2,6 +2,23 @@ local function executable(cmd)
   return vim.fn.executable(cmd) == 1
 end
 
+local js_debug_filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' }
+
+local function load_js_launchjs()
+  local ok_dap, dap = pcall(require, 'dap')
+  if not ok_dap then
+    return
+  end
+
+  pcall(function()
+    dap.ext.vscode.load_launchjs(nil, {
+      ['pwa-node'] = js_debug_filetypes,
+      ['node-terminal'] = js_debug_filetypes,
+      ['pwa-chrome'] = js_debug_filetypes,
+    })
+  end)
+end
+
 return {
   {
     'mfussenegger/nvim-dap',
@@ -33,6 +50,34 @@ return {
       { '<leader>dO', function() require('dap').step_out() end, desc = 'Debug: Step Out' },
       { '<leader>dr', function() require('dap').repl.toggle() end, desc = 'Debug: Toggle REPL' },
       { '<leader>dl', function() require('dap').run_last() end, desc = 'Debug: Run Last' },
+      {
+        '<leader>dj',
+        function()
+          local ft = vim.bo.filetype
+          local is_js = false
+          for _, candidate in ipairs(js_debug_filetypes) do
+            if ft == candidate then
+              is_js = true
+              break
+            end
+          end
+
+          if not is_js then
+            vim.notify('JS/TS debug launch is only available for JS/TS buffers', vim.log.levels.WARN)
+            return
+          end
+
+          require('dap').run {
+            type = 'pwa-node',
+            request = 'launch',
+            name = 'Launch current file',
+            program = '${file}',
+            cwd = '${workspaceFolder}',
+          }
+        end,
+        desc = 'Debug: Launch JS/TS file',
+      },
+      { '<leader>dL', load_js_launchjs, desc = 'Debug: Reload launch.json' },
       { '<leader>de', function() require('dap').terminate() end, desc = 'Debug: Terminate' },
       { '<leader>du', function() require('dapui').toggle() end, desc = 'Debug: Toggle UI' },
     },
@@ -42,6 +87,7 @@ return {
       'nvim-neotest/nvim-nio',
       'williamboman/mason.nvim',
       'jay-babu/mason-nvim-dap.nvim',
+      'mxsdev/nvim-dap-vscode-js',
       'leoluz/nvim-dap-go',
       'mfussenegger/nvim-dap-python',
     },
@@ -58,7 +104,7 @@ return {
 
       require('mason-nvim-dap').setup {
         automatic_installation = true,
-        ensure_installed = { 'delve', 'python' },
+        ensure_installed = { 'delve', 'js', 'python' },
       }
 
       local ok_go, dap_go = pcall(require, 'dap-go')
@@ -74,6 +120,42 @@ return {
       if ok_py and executable 'python3' then
         dap_python.setup(vim.fn.exepath 'python3')
       end
+
+      local ok_js, dap_vscode_js = pcall(require, 'dap-vscode-js')
+      if ok_js then
+        dap_vscode_js.setup {
+          debugger_cmd = { 'js-debug-adapter' },
+          adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' },
+        }
+
+        for _, language in ipairs(js_debug_filetypes) do
+          dap.configurations[language] = {
+            {
+              type = 'pwa-node',
+              request = 'launch',
+              name = 'Launch current file',
+              program = '${file}',
+              cwd = '${workspaceFolder}',
+            },
+            {
+              type = 'pwa-node',
+              request = 'attach',
+              name = 'Attach to process',
+              processId = require('dap.utils').pick_process,
+              cwd = '${workspaceFolder}',
+            },
+            {
+              type = 'pwa-chrome',
+              request = 'launch',
+              name = 'Launch Chrome (localhost:3000)',
+              url = 'http://localhost:3000',
+              webRoot = '${workspaceFolder}',
+            },
+          }
+        end
+      end
+
+      load_js_launchjs()
     end,
   },
 
@@ -162,17 +244,22 @@ return {
       local lint = require 'lint'
 
       lint.linters_by_ft = {
-        lua = { 'selene' },
         bash = { 'shellcheck' },
+        dockerfile = { 'hadolint' },
+        eruby = { 'erb_lint' },
         sh = { 'shellcheck' },
-        zsh = { 'shellcheck' },
+        go = { 'golangcilint' },
         javascript = { 'eslint_d' },
         javascriptreact = { 'eslint_d' },
+        json = { 'jsonlint' },
+        jsonc = { 'jsonlint' },
+        lua = { 'selene' },
+        markdown = { 'markdownlint' },
         typescript = { 'eslint_d' },
         typescriptreact = { 'eslint_d' },
         python = { 'ruff' },
-        go = { 'golangcilint' },
-        markdown = { 'markdownlint' },
+        yaml = { 'yamllint' },
+        zsh = { 'shellcheck' },
       }
 
       local group = vim.api.nvim_create_augroup('config-lint', { clear = true })
@@ -326,6 +413,53 @@ return {
   },
 
   {
+    'ahmedkhalf/project.nvim',
+    event = 'VeryLazy',
+    dependencies = { 'nvim-telescope/telescope.nvim' },
+    keys = {
+      {
+        '<leader>sp',
+        function()
+          local ok, telescope = pcall(require, 'telescope')
+          if not ok then
+            return
+          end
+          local ok_projects, projects = pcall(function()
+            return telescope.extensions.projects
+          end)
+          if ok_projects and projects and projects.projects then
+            projects.projects {}
+            return
+          end
+          require('telescope.builtin').find_files()
+        end,
+        desc = '[S]earch [P]rojects',
+      },
+    },
+    config = function()
+      require('project_nvim').setup {
+        detection_methods = { 'lsp', 'pattern' },
+        patterns = {
+          '.git',
+          '.hg',
+          '.svn',
+          'package.json',
+          'pyproject.toml',
+          'go.mod',
+          'Cargo.toml',
+          'Gemfile',
+          '.luarc.json',
+        },
+        silent_chdir = true,
+      }
+
+      pcall(function()
+        require('telescope').load_extension 'projects'
+      end)
+    end,
+  },
+
+  {
     'folke/persistence.nvim',
     event = 'BufReadPre',
     opts = {},
@@ -350,6 +484,13 @@ return {
           require('persistence').stop()
         end,
         desc = '[P]ersistence: [D]isable',
+      },
+      {
+        '<leader>pS',
+        function()
+          require('persistence').save()
+        end,
+        desc = '[P]ersistence: [S]ave',
       },
     },
   },

@@ -30,6 +30,43 @@ local default_auto_inlay_hints = {
       },
     },
   },
+  basedpyright = {
+    python = {
+      analysis = {
+        inlayHints = {
+          variableTypes = true,
+          functionReturnTypes = true,
+          callArgumentNames = true,
+          callArgumentTypes = true,
+          propertyDeclarationTypes = true,
+        },
+      },
+    },
+  },
+  ts_ls = {
+    typescript = {
+      inlayHints = {
+        includeInlayParameterNameHints = 'all',
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+    },
+    javascript = {
+      inlayHints = {
+        includeInlayParameterNameHints = 'all',
+        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+        includeInlayFunctionParameterTypeHints = true,
+        includeInlayVariableTypeHints = true,
+        includeInlayPropertyDeclarationTypeHints = true,
+        includeInlayFunctionLikeReturnTypeHints = true,
+        includeInlayEnumMemberValueHints = true,
+      },
+    },
+  },
   tsserver = {
     typescript = {
       inlayHints = {
@@ -140,18 +177,27 @@ return {
   {
     'neovim/nvim-lspconfig',
     ft = {
+      'bash',
       'c',
       'cpp',
-      'go',
-      'lua',
-      'python',
-      'rust',
-      'ruby',
+      'dockerfile',
       'eruby',
+      'go',
       'javascript',
       'javascriptreact',
+      'json',
+      'jsonc',
+      'lua',
+      'markdown',
+      'python',
+      'sh',
+      'rust',
+      'ruby',
+      'toml',
       'typescript',
       'typescriptreact',
+      'yaml',
+      'zsh',
     },
     cmd = { 'LspInfo', 'LspStart', 'LspStop', 'LspRestart' },
     dependencies = {
@@ -159,12 +205,52 @@ return {
       'williamboman/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       { 'j-hui/fidget.nvim', opts = {} },
+      {
+        'antosha417/nvim-lsp-file-operations',
+        dependencies = {
+          'nvim-lua/plenary.nvim',
+          'nvim-neo-tree/neo-tree.nvim',
+        },
+        config = function()
+          require('lsp-file-operations').setup()
+        end,
+      },
+      { 'smjonas/inc-rename.nvim', opts = {} },
+      { 'aznhe21/actions-preview.nvim', opts = {} },
     },
     opts = {
       auto_inlay_hints = true,
       servers = {
+        bashls = {},
         clangd = {},
-        gopls = {},
+        dockerls = {},
+        gopls = {
+          settings = {
+            gopls = {
+              completeUnimported = true,
+              usePlaceholders = true,
+              gofumpt = true,
+              staticcheck = true,
+              analyses = {
+                nilness = true,
+                shadow = true,
+                unusedparams = true,
+                useany = true,
+              },
+              codelenses = {
+                gc_details = true,
+                generate = true,
+                regenerate_cgo = true,
+                run_govulncheck = true,
+                test = true,
+                tidy = true,
+                upgrade_dependency = true,
+                vendor = true,
+              },
+            },
+          },
+        },
+        jsonls = {},
         lua_ls = {
           settings = {
             Lua = {
@@ -172,6 +258,20 @@ return {
             },
           },
         },
+        marksman = {},
+        pyright = {
+          settings = {
+            python = {
+              analysis = {
+                autoImportCompletions = true,
+                diagnosticMode = 'workspace',
+                typeCheckingMode = 'standard',
+                useLibraryCodeForTypes = true,
+              },
+            },
+          },
+        },
+        ruff = {},
         rust_analyzer = {},
         ruby_lsp = {
           init_options = {
@@ -179,8 +279,65 @@ return {
             linters = { 'standard' },
           },
         },
+        taplo = {},
+        ts_ls = {
+          init_options = {
+            hostInfo = 'neovim',
+          },
+          settings = {
+            typescript = {
+              suggest = {
+                completeFunctionCalls = true,
+              },
+              updateImportsOnFileMove = {
+                enabled = 'always',
+              },
+              preferences = {
+                includeCompletionsForImportStatements = true,
+                includeCompletionsForModuleExports = true,
+                includeCompletionsWithInsertText = true,
+                importModuleSpecifierPreference = 'non-relative',
+              },
+            },
+            javascript = {
+              suggest = {
+                completeFunctionCalls = true,
+              },
+              updateImportsOnFileMove = {
+                enabled = 'always',
+              },
+              preferences = {
+                includeCompletionsForImportStatements = true,
+                includeCompletionsForModuleExports = true,
+                includeCompletionsWithInsertText = true,
+              },
+            },
+          },
+        },
+        yamlls = {
+          settings = {
+            yaml = {
+              keyOrdering = false,
+              validate = true,
+              schemaStore = {
+                enable = true,
+                url = 'https://www.schemastore.org/api/json/catalog.json',
+              },
+            },
+          },
+        },
       },
-      ensure_installed = { 'stylua' },
+      ensure_installed = {
+        'eslint_d',
+        'golangci-lint',
+        'markdownlint',
+        'prettierd',
+        'ruff',
+        'shellcheck',
+        'shfmt',
+        'stylua',
+        'yamlfmt',
+      },
     },
     config = function(_, opts)
       vim.api.nvim_create_autocmd('LspAttach', {
@@ -199,16 +356,46 @@ return {
 
           map('gd', telescope_lsp 'lsp_definitions', '[G]oto [D]efinition')
           map('gr', telescope_lsp 'lsp_references', '[G]oto [R]eferences')
+          map('gi', telescope_lsp 'lsp_implementations', '[G]oto [I]mplementation')
           map('gI', telescope_lsp 'lsp_implementations', '[G]oto [I]mplementation')
           map('<leader>D', telescope_lsp 'lsp_type_definitions', 'Type [D]efinition')
           map('<leader>ds', telescope_lsp 'lsp_document_symbols', '[D]ocument [S]ymbols')
-          map('<leader>ws', telescope_lsp 'lsp_dynamic_workspace_symbols', '[W]orkspace [S]ymbols')
-          map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
-          map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+          map('<leader>sW', telescope_lsp 'lsp_dynamic_workspace_symbols', '[S]earch [W]orkspace Symbols')
+          if vim.fn.exists ':IncRename' == 2 then
+            vim.keymap.set('n', '<leader>rn', function()
+              return ':IncRename ' .. vim.fn.expand '<cword>'
+            end, {
+              expr = true,
+              buffer = buffer,
+              desc = 'LSP: [R]e[n]ame',
+            })
+          else
+            map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
+          end
+          map('<leader>ca', function()
+            local ok_actions_preview, actions_preview = pcall(require, 'actions-preview')
+            if ok_actions_preview then
+              actions_preview.code_actions()
+              return
+            end
+            vim.lsp.buf.code_action()
+          end, '[C]ode [A]ction', { 'n', 'x' })
           map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
           map('K', vim.lsp.buf.hover, 'Hover Documentation')
           map('gK', vim.lsp.buf.signature_help, 'Signature Help')
+          map('<leader>cwa', vim.lsp.buf.add_workspace_folder, '[C]ode [W]orkspace: [A]dd Folder')
+          map('<leader>cwr', vim.lsp.buf.remove_workspace_folder, '[C]ode [W]orkspace: [R]emove Folder')
+          map('<leader>cwl', function()
+            vim.notify(vim.inspect(vim.lsp.buf.list_workspace_folders()), vim.log.levels.INFO)
+          end, '[C]ode [W]orkspace: [L]ist Folders')
           map('gl', vim.diagnostic.open_float, 'Open Diagnostic Float')
+          map('<leader>td', function()
+            local enabled = true
+            if vim.diagnostic.is_enabled then
+              enabled = vim.diagnostic.is_enabled { bufnr = buffer }
+            end
+            vim.diagnostic.enable(not enabled, { bufnr = buffer })
+          end, '[T]oggle [D]iagnostics')
           map(']d', function()
             vim.diagnostic.jump { count = 1, float = true }
           end, 'Next Diagnostic')
@@ -243,6 +430,24 @@ return {
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = buffer })
             end, '[T]oggle Inlay [H]ints')
+          end
+
+          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_codeLens) then
+            local codelens_group = vim.api.nvim_create_augroup('config-lsp-codelens-' .. buffer, { clear = true })
+            local refresh_codelens = function()
+              pcall(vim.lsp.codelens.refresh, { bufnr = buffer })
+            end
+
+            refresh_codelens()
+
+            vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
+              group = codelens_group,
+              buffer = buffer,
+              callback = refresh_codelens,
+            })
+
+            map('<leader>cL', refresh_codelens, '[C]ode Lens: Refresh')
+            map('<leader>cA', vim.lsp.codelens.run, '[C]ode Lens: Run Action')
           end
         end,
       })
@@ -327,7 +532,25 @@ return {
 
   {
     'stevearc/conform.nvim',
-    ft = { 'lua', 'eruby', 'ruby', 'go' },
+    ft = {
+      'bash',
+      'eruby',
+      'go',
+      'javascript',
+      'javascriptreact',
+      'json',
+      'jsonc',
+      'lua',
+      'markdown',
+      'python',
+      'ruby',
+      'sh',
+      'toml',
+      'typescript',
+      'typescriptreact',
+      'yaml',
+      'zsh',
+    },
     cmd = { 'ConformInfo' },
     keys = {
       {
@@ -355,10 +578,23 @@ return {
         }
       end,
       formatters_by_ft = {
+        bash = { 'shfmt' },
+        go = { 'goimports', 'gofmt' },
+        javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        javascriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        jsonc = { 'prettierd', 'prettier', stop_after_first = true },
         lua = { 'stylua' },
+        markdown = { 'prettierd', 'prettier', stop_after_first = true },
+        python = { 'ruff_organize_imports', 'ruff_fix', 'ruff_format' },
         eruby = { 'erb_format' },
         ruby = { 'rubocop' },
-        go = { 'gofmt' },
+        sh = { 'shfmt' },
+        toml = { 'taplo' },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescriptreact = { 'prettierd', 'prettier', stop_after_first = true },
+        yaml = { 'yamlfmt' },
+        zsh = { 'shfmt' },
       },
     },
   },

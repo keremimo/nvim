@@ -37,7 +37,11 @@ return {
 
       -- (Default) Only show the documentation popup when manually triggered
       completion = {
-        documentation = { auto_show = false },
+        documentation = {
+          auto_show = true,
+          auto_show_delay_ms = 200,
+        },
+        ghost_text = { enabled = true },
         accept = {
           -- Write completions to the `.` register
           dot_repeat = true,
@@ -67,6 +71,17 @@ return {
               timeout_ms = 400,
             },
           },
+        },
+      },
+
+      signature = {
+        enabled = true,
+        trigger = {
+          show_on_insert = true,
+          show_on_accept = true,
+        },
+        window = {
+          show_documentation = true,
         },
       },
 
