@@ -554,6 +554,11 @@ return {
     'folke/persistence.nvim',
     event = 'VeryLazy',
     opts = {},
+    config = function(_, opts)
+      local persistence = require 'persistence'
+      persistence.setup(opts)
+      persistence.stop()
+    end,
     keys = {
       {
         '<leader>ps',
