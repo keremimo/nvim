@@ -2,10 +2,9 @@ return {
   {
     'nvim-treesitter/nvim-treesitter',
     branch = 'master',
-    event = { 'BufReadPost', 'BufNewFile' },
+    lazy = false,
     cmd = { 'TSInstall', 'TSUpdate', 'TSUninstall', 'TSBufEnable', 'TSBufDisable', 'TSModuleInfo' },
     build = ':TSUpdate',
-    main = 'nvim-treesitter.configs',
     dependencies = { 'RRethy/nvim-treesitter-endwise' },
     opts = {
       ensure_installed = {
@@ -34,5 +33,17 @@ return {
       },
       endwise = { enable = true },
     },
+    config = function(_, opts)
+      local ok_configs, configs = pcall(require, 'nvim-treesitter.configs')
+      if ok_configs then
+        configs.setup(opts)
+        return
+      end
+
+      local ok_ts, treesitter = pcall(require, 'nvim-treesitter')
+      if ok_ts then
+        treesitter.setup({})
+      end
+    end,
   },
 }

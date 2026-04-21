@@ -154,6 +154,9 @@ return {
       telescope.setup {
         defaults = {
           file_ignore_patterns = { 'node_modules/', '%.git/' },
+          preview = {
+            treesitter = false,
+          },
         },
         pickers = {
           find_files = { mappings = tab_drop_mappings },
