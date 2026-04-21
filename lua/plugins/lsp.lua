@@ -449,7 +449,7 @@ return {
                 if result then
                   local client = vim.lsp.get_client_by_id(client_id)
                   local offset_encoding = client and client.offset_encoding or 'utf-16'
-                  if vim.tbl_islist(result) then
+                  if vim.islist(result) then
                     for _, loc in ipairs(result) do
                       table.insert(locations, { location = loc, offset_encoding = offset_encoding })
                     end
@@ -538,7 +538,7 @@ return {
             vim.diagnostic.jump { count = -1, float = true }
           end, 'Previous Diagnostic')
 
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
             local highlight_group = vim.api.nvim_create_augroup('config-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               group = highlight_group,
@@ -559,28 +559,20 @@ return {
             })
           end
 
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
             vim.lsp.inlay_hint.enable(true, { bufnr = buffer })
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = buffer })
             end, '[T]oggle Inlay [H]ints')
           end
 
-          if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_codeLens) then
-            local codelens_group = vim.api.nvim_create_augroup('config-lsp-codelens-' .. buffer, { clear = true })
-            local refresh_codelens = function()
-              pcall(vim.lsp.codelens.refresh, { bufnr = buffer })
-            end
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_codeLens) then
+            vim.lsp.codelens.enable(true, { bufnr = buffer })
 
-            refresh_codelens()
-
-            vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
-              group = codelens_group,
-              buffer = buffer,
-              callback = refresh_codelens,
-            })
-
-            map('<leader>cL', refresh_codelens, '[C]ode Lens: Refresh')
+            map('<leader>cL', function()
+              vim.lsp.codelens.enable(false, { bufnr = buffer })
+              vim.lsp.codelens.enable(true, { bufnr = buffer })
+            end, '[C]ode Lens: Refresh')
             map('<leader>cA', vim.lsp.codelens.run, '[C]ode Lens: Run Action')
           end
         end,
@@ -635,10 +627,6 @@ return {
         vim.lsp.config(server_name, server_config)
       end
 
-      for server_name in pairs(servers) do
-        vim.lsp.enable(server_name)
-      end
-
       require('mason').setup()
 
       local ensure = {}
@@ -654,19 +642,45 @@ return {
         add_ensure(tool)
       end
 
-      local mason_skip = { ruby_lsp = true }
-      for server_name in pairs(servers) do
-        if not mason_skip[server_name] then
-          add_ensure(server_name)
-        end
-      end
-      require('mason-tool-installer').setup {
+      local mason_tool_installer = require 'mason-tool-installer'
+      mason_tool_installer.setup {
         ensure_installed = ensure,
         run_on_start = false,
         auto_update = false,
+        integrations = {
+          ['mason-lspconfig'] = true,
+        },
       }
 
-      require('mason-lspconfig').setup {}
+      vim.schedule(function()
+        mason_tool_installer.check_install(false)
+      end)
+
+      local mason_skip = { ruby_lsp = true }
+      local mason_lspconfig = require 'mason-lspconfig'
+      local lsp_to_package = mason_lspconfig.get_mappings().lspconfig_to_package
+      local mason_servers = {}
+      local manual_servers = {}
+
+      for server_name in pairs(servers) do
+        if not mason_skip[server_name] and lsp_to_package[server_name] then
+          table.insert(mason_servers, server_name)
+        else
+          table.insert(manual_servers, server_name)
+        end
+      end
+
+      table.sort(mason_servers)
+      table.sort(manual_servers)
+
+      mason_lspconfig.setup {
+        ensure_installed = mason_servers,
+        automatic_enable = true,
+      }
+
+      for _, server_name in ipairs(manual_servers) do
+        vim.lsp.enable(server_name)
+      end
     end,
   },
 

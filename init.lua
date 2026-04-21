@@ -1,3 +1,7 @@
+if vim.islist then
+  vim.tbl_islist = vim.islist
+end
+
 -- Core settings
 require 'config.options'
 require 'config.keymaps'

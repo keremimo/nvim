@@ -9,6 +9,22 @@ if vim.iter then
   end
 end
 
+-- Compatibility shim for plugins still calling deprecated vim.lsp.buf_get_clients.
+if vim.lsp and vim.lsp.get_clients then
+  ---@diagnostic disable-next-line: duplicate-set-field
+  vim.lsp.buf_get_clients = function(bufnr)
+    if bufnr == nil or bufnr == 0 then
+      bufnr = vim.api.nvim_get_current_buf()
+    end
+
+    local by_id = {}
+    for _, client in ipairs(vim.lsp.get_clients { bufnr = bufnr }) do
+      by_id[client.id] = client
+    end
+    return by_id
+  end
+end
+
 -- Leaders and global toggles
 g.mapleader = ' '
 g.maplocalleader = ' '
