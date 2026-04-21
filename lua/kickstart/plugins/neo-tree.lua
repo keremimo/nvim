@@ -79,53 +79,15 @@ return {
       end
     end
 
-    local function has_neotree_in_tab(tab)
-      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
-        local buf = vim.api.nvim_win_get_buf(win)
-        if vim.bo[buf].filetype == 'neo-tree' then
-          return true
-        end
-      end
-      return false
-    end
-
-    local function any_neotree_open()
-      for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
-        if has_neotree_in_tab(tab) then
-          return true
-        end
-      end
-      return false
-    end
-
-    local function show_neotree_without_focus()
-      local original_win = vim.api.nvim_get_current_win()
-      local ok = pcall(vim.cmd, 'Neotree reveal')
-      if not ok then
-        return
-      end
-
-      if original_win and vim.api.nvim_win_is_valid(original_win) then
-        pcall(vim.api.nvim_set_current_win, original_win)
-      end
-    end
-
     opts.event_handlers = opts.event_handlers or {}
     table.insert(opts.event_handlers, {
       event = 'neo_tree_window_after_open',
       handler = function(args)
-        vim.g.neotree_sticky_tabs = true
         local win = args and args.winid
         if win and vim.api.nvim_win_is_valid(win) then
           vim.api.nvim_set_option_value('winfixwidth', true, { win = win })
           pcall(vim.api.nvim_win_set_width, win, opts.filesystem.window.width or 20)
         end
-      end,
-    })
-    table.insert(opts.event_handlers, {
-      event = 'neo_tree_window_after_close',
-      handler = function()
-        vim.g.neotree_sticky_tabs = any_neotree_open()
       end,
     })
 
@@ -141,19 +103,7 @@ return {
       end
     end
 
-    local group = vim.api.nvim_create_augroup('NeoTreeStickyTabs', { clear = true })
-    vim.api.nvim_create_autocmd({ 'TabNewEntered', 'TabEnter' }, {
-      group = group,
-      callback = function()
-        if not vim.g.neotree_sticky_tabs then
-          return
-        end
-        if has_neotree_in_tab(0) then
-          return
-        end
-        show_neotree_without_focus()
-      end,
-    })
+    local group = vim.api.nvim_create_augroup('NeoTreeRuntime', { clear = true })
 
     vim.api.nvim_create_autocmd('BufEnter', {
       group = group,
