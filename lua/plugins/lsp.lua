@@ -647,6 +647,7 @@ return {
         ensure_installed = ensure,
         run_on_start = false,
         auto_update = false,
+        debounce_hours = 24,
         integrations = {
           ['mason-lspconfig'] = true,
         },
