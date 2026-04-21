@@ -40,6 +40,10 @@ map({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>w<CR><ESC>', { silent = true, desc = 'Save
 map('n', '<leader>gg', '<Cmd>LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
 map('n', '<leader>tt', '<Cmd>Themery<CR>', { silent = true, desc = '[T]oggle [T]heme picker' })
 map('n', '<leader>tT', '<Cmd>Telescope colorscheme enable_preview=true<CR>', { silent = true, desc = 'Theme picker (Telescope)' })
+map('n', '<leader>up', function() require('config.profiles').pick() end, { desc = '[U]I: Pick workspace [P]rofile' })
+map('n', '<leader>uc', function() require('config.profiles').apply 'coding' end, { desc = '[U]I: [C]oding profile' })
+map('n', '<leader>uw', function() require('config.profiles').apply 'writing' end, { desc = '[U]I: [W]riting profile' })
+map('n', '<leader>ud', function() require('config.profiles').apply 'debugging' end, { desc = '[U]I: [D]ebugging profile' })
 
 -- Colemak-style cursor movement
 -- map('', 'j', 'h', { noremap = true, silent = true })

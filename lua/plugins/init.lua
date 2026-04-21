@@ -25,6 +25,13 @@ function M.setup()
     require('kickstart.plugins.neo-tree'),
     { import = 'custom.plugins' },
   }, {
+    checker = {
+      enabled = false,
+    },
+    change_detection = {
+      enabled = false,
+      notify = false,
+    },
     rocks = {
       enabled = false,
     },

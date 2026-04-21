@@ -151,22 +151,34 @@ return {
       {
         '<leader>tl',
         function()
-          local config = vim.diagnostic.config()
-          local use_virtual_lines = not config.virtual_lines
+          local bufnr = vim.api.nvim_get_current_buf()
+          local current = vim.diagnostic.config(nil, bufnr)
+          local global = vim.diagnostic.config()
+          local use_virtual_lines = not current.virtual_lines
 
-          vim.diagnostic.config {
-            virtual_lines = use_virtual_lines and { only_current_line = false } or false,
-            virtual_text = use_virtual_lines and false or {
+          local virtual_lines = { only_current_line = false }
+          if type(global.virtual_lines) == 'table' then
+            virtual_lines = vim.deepcopy(global.virtual_lines)
+          end
+
+          local virtual_text = global.virtual_text
+          if virtual_text == false then
+            virtual_text = {
               spacing = 2,
               source = 'if_many',
               prefix = '*',
-            },
-          }
+            }
+          end
+
+          vim.diagnostic.config({
+            virtual_lines = use_virtual_lines and virtual_lines or false,
+            virtual_text = use_virtual_lines and false or virtual_text,
+          }, bufnr)
 
           if use_virtual_lines then
-            vim.notify('Diagnostics style: virtual lines', vim.log.levels.INFO)
+            vim.notify('Diagnostics style (buffer): virtual lines', vim.log.levels.INFO)
           else
-            vim.notify('Diagnostics style: virtual text', vim.log.levels.INFO)
+            vim.notify('Diagnostics style (buffer): virtual text', vim.log.levels.INFO)
           end
         end,
         desc = '[T]oggle diagnostics virtual [L]ines',

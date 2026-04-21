@@ -3,6 +3,7 @@ require 'config.options'
 require 'config.keymaps'
 require 'config.autocmds'
 require 'config.commands'
+require('config.profiles').setup()
 
 -- Plugins
 require('plugins').setup()

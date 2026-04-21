@@ -191,6 +191,7 @@ return {
         desc = 'Test: Run all',
       },
       { '<leader>nl', function() require('neotest').run.run_last() end, desc = 'Test: Run last' },
+      { '<leader>nF', function() require('neotest').rerun_failed.run_last_failed() end, desc = 'Test: Rerun failed' },
       { '<leader>nd', function() require('neotest').run.run { strategy = 'dap' } end, desc = 'Test: Debug nearest' },
       { '<leader>ns', function() require('neotest').summary.toggle() end, desc = 'Test: Toggle summary' },
       { '<leader>no', function() require('neotest').output.open { enter = true, auto_close = true } end, desc = 'Test: Open output' },
@@ -205,6 +206,63 @@ return {
       'marilari88/neotest-vitest',
     },
     config = function()
+      local rerun_failed_consumer = function(client)
+        local nio = require 'nio'
+        local M = {}
+
+        local function collect_failed(adapter_id)
+          local positions = client:get_position(nil, { adapter = adapter_id })
+          if not positions then
+            return {}
+          end
+
+          local results = client:get_results(adapter_id) or {}
+          local failed = {}
+
+          for _, pos in positions:iter() do
+            local data = pos:data()
+            if data.type == 'test' then
+              local result = results[data.id]
+              if result and result.status == 'failed' then
+                table.insert(failed, data.id)
+              end
+            end
+          end
+
+          return failed
+        end
+
+        function M.run_last_failed()
+          nio.run(function()
+            local adapters = client:get_adapters()
+            local rerun = {}
+
+            for _, adapter_id in ipairs(adapters) do
+              local failed_ids = collect_failed(adapter_id)
+              for _, id in ipairs(failed_ids) do
+                table.insert(rerun, { adapter = adapter_id, id = id })
+              end
+            end
+
+            if #rerun == 0 then
+              vim.notify('Neotest: no failed tests to rerun', vim.log.levels.INFO)
+              return
+            end
+
+            for _, entry in ipairs(rerun) do
+              local tree = client:get_position(entry.id, { adapter = entry.adapter })
+              if tree then
+                client:run_tree(tree, { adapter = entry.adapter })
+              end
+            end
+
+            vim.notify(string.format('Neotest: rerunning %d failed test(s)', #rerun), vim.log.levels.INFO)
+          end)
+        end
+
+        return M
+      end
+
       local adapters = {}
 
       local ok_go, neotest_go = pcall(require, 'neotest-go')
@@ -224,8 +282,20 @@ return {
 
       require('neotest').setup {
         adapters = adapters,
+        consumers = {
+          rerun_failed = rerun_failed_consumer,
+        },
         discovery = { enabled = true },
         output = { open_on_run = false },
+        diagnostic = {
+          enabled = true,
+          severity = vim.diagnostic.severity.ERROR,
+        },
+        status = {
+          enabled = true,
+          virtual_text = true,
+          signs = false,
+        },
         quickfix = {
           enabled = true,
           open = function()
@@ -250,7 +320,7 @@ return {
 
   {
     'mfussenegger/nvim-lint',
-    event = { 'BufReadPost', 'BufNewFile' },
+    event = 'VeryLazy',
     config = function()
       local lint = require 'lint'
 
@@ -338,7 +408,7 @@ return {
 
   {
     'Bekaboo/dropbar.nvim',
-    event = 'BufReadPost',
+    event = 'VeryLazy',
     dependencies = {
       'nvim-tree/nvim-web-devicons',
       'nvim-telescope/telescope-fzf-native.nvim',
@@ -482,7 +552,7 @@ return {
 
   {
     'folke/persistence.nvim',
-    event = 'BufReadPre',
+    event = 'VeryLazy',
     opts = {},
     keys = {
       {
@@ -524,6 +594,8 @@ return {
       { '<leader>gD', '<cmd>DiffviewClose<CR>', desc = '[G]it close [D]iff view' },
       { '<leader>gh', '<cmd>DiffviewFileHistory %<CR>', desc = '[G]it file [H]istory' },
       { '<leader>gH', '<cmd>DiffviewFileHistory<CR>', desc = '[G]it repo [H]istory' },
+      { '<leader>gf', '<cmd>DiffviewFocusFiles<CR>', desc = '[G]it dif[f] file panel' },
+      { '<leader>gR', '<cmd>DiffviewRefresh<CR>', desc = '[G]it diffview [R]efresh' },
     },
     opts = {},
   },

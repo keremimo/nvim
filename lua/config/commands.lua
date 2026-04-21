@@ -40,3 +40,29 @@ end, {
   complete = 'file',
   desc = 'Run :checkhealth and write output to a file',
 })
+
+vim.api.nvim_create_user_command('LazyProfile', function()
+  vim.cmd 'Lazy profile'
+end, {
+  desc = 'Open lazy.nvim startup profiler',
+})
+
+vim.api.nvim_create_user_command('LazyStats', function()
+  local ok, lazy = pcall(require, 'lazy')
+  if not ok then
+    vim.notify('lazy.nvim is not available', vim.log.levels.ERROR)
+    return
+  end
+
+  local stats = lazy.stats()
+  local message = string.format(
+    'Startup: %d/%d plugins in %.2fms (lazy.nvim %.2fms)',
+    stats.loaded,
+    stats.count,
+    stats.startuptime,
+    stats.times.LazyDone or 0
+  )
+  vim.notify(message, vim.log.levels.INFO)
+end, {
+  desc = 'Show lazy.nvim startup statistics',
+})
