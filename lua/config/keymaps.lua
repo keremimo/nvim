@@ -1,4 +1,5 @@
 local map = vim.keymap.set
+local buffers = require 'config.buffers'
 
 local function smart_split()
   local width = vim.api.nvim_win_get_width(0)
@@ -179,79 +180,16 @@ local function cycle_pair_terminals()
   focus_pair_window(float_term_pair.left.win)
 end
 
-local function win_is_neotree(win)
-  if not is_valid_win(win) then
-    return false
-  end
-  local buf = vim.api.nvim_win_get_buf(win)
-  return vim.bo[buf].filetype == 'neo-tree' or vim.bo[buf].filetype == 'neo-tree-popup'
-end
-
-local function find_win(predicate)
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if predicate(win) then
-      return win
-    end
-  end
-end
-
-local neotree_focus_state = {
-  last_main = nil,
-  last_neotree = nil,
-}
-
-local function focus_win(win)
-  if not is_valid_win(win) then
-    return false
-  end
-  if vim.fn.mode() == 't' then
-    vim.cmd.stopinsert()
-  end
-  vim.api.nvim_set_current_win(win)
-  return true
-end
-
-local function focus_neotree_or_back()
-  local current = vim.api.nvim_get_current_win()
-
-  if win_is_neotree(current) then
-    local target = neotree_focus_state.last_main
-    if not is_valid_win(target) or win_is_neotree(target) then
-      target = find_win(function(win)
-        return not win_is_neotree(win)
-      end)
-    end
-    focus_win(target)
-    return
-  end
-
-  neotree_focus_state.last_main = current
-
-  local target = neotree_focus_state.last_neotree
-  if not is_valid_win(target) or not win_is_neotree(target) then
-    target = find_win(win_is_neotree)
-  end
-
-  if target then
-    neotree_focus_state.last_neotree = target
-    focus_win(target)
-    return
-  end
-
-  vim.cmd 'Neotree reveal'
-  local opened = vim.api.nvim_get_current_win()
-  if win_is_neotree(opened) then
-    neotree_focus_state.last_neotree = opened
-  end
-end
-
 -- Basics
 map('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'Clear search highlights' })
 map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Diagnostic location list' })
 
 -- Terminal
 map('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
-map('t', '<C-q>', '<C-\\><C-n><Cmd>q<CR>', { silent = true, desc = 'Quit terminal window' })
+map('t', '<C-q>', function()
+  vim.cmd.stopinsert()
+  buffers.delete_current { force = true }
+end, { silent = true, desc = 'Close current terminal buffer' })
 
 -- Window navigation
 map('n', '<C-h>', '<C-w><C-h>', { desc = 'Focus left window' })
@@ -260,8 +198,6 @@ map('n', '<C-j>', '<C-w><C-j>', { desc = 'Focus lower window' })
 map('n', '<C-k>', '<C-w><C-k>', { desc = 'Focus upper window' })
 
 -- Quick access
-map('n', '<leader>e', '<Cmd>Neotree toggle<CR>', { silent = true, desc = 'Toggle Neo-tree' })
-map('n', '<C-e>', focus_neotree_or_back, { silent = true, desc = 'Focus Neo-tree and back' })
 map('n', '<C-t>', cycle_pair_terminals, { silent = true, desc = 'Cycle pair terminal focus' })
 map('t', '<C-t>', function()
   vim.cmd.stopinsert()
@@ -273,7 +209,9 @@ map('n', '<leader>wv', '<C-w>v', { desc = 'Split window vertically' })
 map('n', '<leader>wo', '<C-w>o', { desc = 'Close other windows' })
 map('n', '<leader>wq', '<Cmd>q<CR>', { silent = true, desc = 'Close current window' })
 map('n', '<leader>w=', '<C-w>=', { desc = 'Equalize window sizes' })
-map('n', '<C-q>', '<Cmd>q<CR>', { silent = true, desc = 'Quit window' })
+map('n', '<C-q>', function()
+  buffers.delete_current()
+end, { silent = true, desc = 'Close current buffer' })
 map({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>w<CR><ESC>', { silent = true, desc = 'Save file' })
 map('n', '<leader>gg', '<Cmd>LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
 map('n', '<leader>tt', '<Cmd>Themery<CR>', { silent = true, desc = '[T]oggle [T]heme picker' })

@@ -637,7 +637,13 @@ return {
       { '[b', '<cmd>BufferLineCyclePrev<CR>', desc = 'Buffer: Previous' },
       { ']b', '<cmd>BufferLineCycleNext<CR>', desc = 'Buffer: Next' },
       { '<leader>bp', '<cmd>BufferLineTogglePin<CR>', desc = '[B]uffer: Toggle [P]in' },
-      { '<leader>bc', '<cmd>bdelete<CR>', desc = '[B]uffer: [C]lose current' },
+      {
+        '<leader>bc',
+        function()
+          require('config.buffers').delete_current()
+        end,
+        desc = '[B]uffer: [C]lose current',
+      },
       { '<leader>bo', '<cmd>BufferLineCloseOthers<CR>', desc = '[B]uffer: Close [O]thers' },
       { '<leader>bP', '<cmd>BufferLinePick<CR>', desc = '[B]uffer: [P]ick' },
       { '<leader>b,', '<cmd>BufferLineMovePrev<CR>', desc = '[B]uffer: Move left' },
@@ -648,6 +654,12 @@ return {
     opts = {
       options = {
         mode = 'buffers',
+        close_command = function(bufnr)
+          require('config.buffers').delete(bufnr)
+        end,
+        right_mouse_command = function(bufnr)
+          require('config.buffers').delete(bufnr)
+        end,
         numbers = 'ordinal',
         diagnostics = 'nvim_lsp',
         diagnostics_indicator = function(count, level, _, context)
