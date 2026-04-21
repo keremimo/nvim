@@ -97,4 +97,4 @@ vim.api.nvim_create_autocmd('FileType', {
 })
 
 vim.api.nvim_set_hl(0, 'NotifyBackground', { bg = '#222222' })
-vim.o.showtabline = 1
+vim.o.showtabline = 2

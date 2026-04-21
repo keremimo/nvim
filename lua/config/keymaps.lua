@@ -1,5 +1,5 @@
 local map = vim.keymap.set
-local buffers = require 'config.buffers'
+local tabflow = require 'config.tabflow'
 
 local function smart_split()
   local width = vim.api.nvim_win_get_width(0)
@@ -188,8 +188,8 @@ map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Diagnostic location l
 map('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 map('t', '<C-q>', function()
   vim.cmd.stopinsert()
-  buffers.delete_current { force = true }
-end, { silent = true, desc = 'Close current terminal buffer' })
+  tabflow.close_current_target()
+end, { silent = true, desc = 'Close current window' })
 
 -- Window navigation
 map('n', '<C-h>', '<C-w><C-h>', { desc = 'Focus left window' })
@@ -209,13 +209,13 @@ map('n', '<leader>wv', '<C-w>v', { desc = 'Split window vertically' })
 map('n', '<leader>wo', '<C-w>o', { desc = 'Close other windows' })
 map('n', '<leader>wq', '<Cmd>q<CR>', { silent = true, desc = 'Close current window' })
 map('n', '<leader>w=', '<C-w>=', { desc = 'Equalize window sizes' })
-map('n', '<C-q>', function()
-  buffers.delete_current()
-end, { silent = true, desc = 'Close current buffer' })
+map('n', '<C-q>', tabflow.close_current_target, { silent = true, desc = 'Close current target' })
 map({ 'n', 'v', 'i' }, '<C-s>', '<Cmd>w<CR><ESC>', { silent = true, desc = 'Save file' })
 map('n', '<leader>gg', '<Cmd>LazyGit<CR>', { silent = true, desc = 'Open LazyGit' })
 map('n', '<leader>tt', '<Cmd>Themery<CR>', { silent = true, desc = '[T]oggle [T]heme picker' })
 map('n', '<leader>tT', '<Cmd>Telescope colorscheme enable_preview=true<CR>', { silent = true, desc = 'Theme picker (Telescope)' })
+map('n', '<leader>tn', '<Cmd>tabnext<CR>', { silent = true, desc = '[T]ab: [N]ext' })
+map('n', '<leader>tp', '<Cmd>tabprevious<CR>', { silent = true, desc = '[T]ab: [P]revious' })
 map('n', '<leader>up', function() require('config.profiles').pick() end, { desc = '[U]I: Pick workspace [P]rofile' })
 map('n', '<leader>uc', function() require('config.profiles').apply 'coding' end, { desc = '[U]I: [C]oding profile' })
 map('n', '<leader>uw', function() require('config.profiles').apply 'writing' end, { desc = '[U]I: [W]riting profile' })

@@ -629,46 +629,32 @@ return {
   {
     'akinsho/bufferline.nvim',
     version = '*',
-    event = 'VeryLazy',
+    event = 'VimEnter',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     keys = {
-      { '<S-h>', '<cmd>BufferLineCyclePrev<CR>', desc = 'Buffer: Previous' },
-      { '<S-l>', '<cmd>BufferLineCycleNext<CR>', desc = 'Buffer: Next' },
-      { '[b', '<cmd>BufferLineCyclePrev<CR>', desc = 'Buffer: Previous' },
-      { ']b', '<cmd>BufferLineCycleNext<CR>', desc = 'Buffer: Next' },
-      { '<leader>bp', '<cmd>BufferLineTogglePin<CR>', desc = '[B]uffer: Toggle [P]in' },
+      { '<S-h>', '<cmd>BufferLineCyclePrev<CR>', desc = 'Tab: Previous' },
+      { '<S-l>', '<cmd>BufferLineCycleNext<CR>', desc = 'Tab: Next' },
+      { '[b', '<cmd>BufferLineCyclePrev<CR>', desc = 'Tab: Previous' },
+      { ']b', '<cmd>BufferLineCycleNext<CR>', desc = 'Tab: Next' },
       {
         '<leader>bc',
         function()
-          require('config.buffers').delete_current()
+          require('config.tabflow').close_current_target()
         end,
-        desc = '[B]uffer: [C]lose current',
+        desc = '[B]uffer: [C]lose current tab/target',
       },
-      { '<leader>bo', '<cmd>BufferLineCloseOthers<CR>', desc = '[B]uffer: Close [O]thers' },
-      { '<leader>bP', '<cmd>BufferLinePick<CR>', desc = '[B]uffer: [P]ick' },
-      { '<leader>b,', '<cmd>BufferLineMovePrev<CR>', desc = '[B]uffer: Move left' },
-      { '<leader>b.', '<cmd>BufferLineMoveNext<CR>', desc = '[B]uffer: Move right' },
-      { '<leader>bl', '<cmd>BufferLineCloseLeft<CR>', desc = '[B]uffer: Close [L]eft' },
-      { '<leader>br', '<cmd>BufferLineCloseRight<CR>', desc = '[B]uffer: Close [R]ight' },
+      { '<leader>bo', '<cmd>BufferLineCloseOthers<CR>', desc = '[B]uffer: Close [O]ther tabs' },
+      { '<leader>bP', '<cmd>BufferLinePick<CR>', desc = '[B]uffer: [P]ick tab' },
+      { '<leader>b,', '<cmd>BufferLineMovePrev<CR>', desc = '[B]uffer: Move tab left' },
+      { '<leader>b.', '<cmd>BufferLineMoveNext<CR>', desc = '[B]uffer: Move tab right' },
+      { '<leader>bl', '<cmd>BufferLineCloseLeft<CR>', desc = '[B]uffer: Close tabs [L]eft' },
+      { '<leader>br', '<cmd>BufferLineCloseRight<CR>', desc = '[B]uffer: Close tabs [R]ight' },
+      { '<leader>bn', '<cmd>tabnew<CR>', desc = '[B]uffer: [N]ew tab' },
     },
     opts = {
       options = {
-        mode = 'buffers',
-        close_command = function(bufnr)
-          require('config.buffers').delete(bufnr)
-        end,
-        right_mouse_command = function(bufnr)
-          require('config.buffers').delete(bufnr)
-        end,
+        mode = 'tabs',
         numbers = 'ordinal',
-        diagnostics = 'nvim_lsp',
-        diagnostics_indicator = function(count, level, _, context)
-          if context.buffer:current() then
-            return ''
-          end
-          local icon = level:match 'error' and ' ' or ' '
-          return icon .. count
-        end,
         indicator = {
           icon = '▎',
           style = 'icon',
@@ -686,15 +672,6 @@ return {
         always_show_bufferline = true,
         show_buffer_close_icons = true,
         show_close_icon = false,
-        sort_by = 'insert_after_current',
-        offsets = {
-          {
-            filetype = 'neo-tree',
-            text = '  Explorer',
-            text_align = 'left',
-            separator = true,
-          },
-        },
       },
     },
   },
@@ -994,7 +971,78 @@ return {
       },
     },
     config = function()
-      require('harpoon'):setup()
+      local harpoon = require 'harpoon'
+      local uv = vim.uv or vim.loop
+
+      local function is_absolute(path)
+        return path:sub(1, 1) == '/' or path:match '^%a:[/\\]'
+      end
+
+      local function resolve_mark_path(list_item, list)
+        if not list_item or type(list_item.value) ~= 'string' or list_item.value == '' then
+          return nil
+        end
+
+        local root = uv.cwd()
+        if list and list.config and type(list.config.get_root_dir) == 'function' then
+          local ok, candidate = pcall(list.config.get_root_dir)
+          if ok and type(candidate) == 'string' and candidate ~= '' then
+            root = candidate
+          end
+        end
+
+        local path = list_item.value
+        if not is_absolute(path) then
+          path = root .. '/' .. path
+        end
+        if vim.fs and vim.fs.normalize then
+          path = vim.fs.normalize(path)
+        end
+        return path
+      end
+
+      local function restore_position(list_item)
+        local ctx = list_item and list_item.context
+        if type(ctx) ~= 'table' then
+          return
+        end
+
+        local row = tonumber(ctx.row) or 1
+        local col = tonumber(ctx.col) or 0
+        row = math.max(1, row)
+        col = math.max(0, col)
+
+        local line_count = vim.api.nvim_buf_line_count(0)
+        row = math.min(row, math.max(line_count, 1))
+        local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
+        col = math.min(col, #line)
+
+        pcall(vim.api.nvim_win_set_cursor, 0, { row, col })
+      end
+
+      harpoon:setup {
+        default = {
+          select = function(list_item, list, options)
+            local path = resolve_mark_path(list_item, list)
+            if not path then
+              return
+            end
+
+            options = options or {}
+            if options.vsplit then
+              vim.cmd('vsplit ' .. vim.fn.fnameescape(path))
+            elseif options.split then
+              vim.cmd('split ' .. vim.fn.fnameescape(path))
+            elseif options.tabedit then
+              vim.cmd('tabedit ' .. vim.fn.fnameescape(path))
+            else
+              vim.cmd('tab drop ' .. vim.fn.fnameescape(path))
+            end
+
+            restore_position(list_item)
+          end,
+        },
+      }
     end,
   },
 }

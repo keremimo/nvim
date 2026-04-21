@@ -117,10 +117,48 @@ return {
     },
     config = function()
       local telescope = require 'telescope'
+      local actions = require 'telescope.actions'
+      local action_set = require 'telescope.actions.set'
+      local action_state = require 'telescope.actions.state'
+      local Path = require 'plenary.path'
+      local uv = vim.uv or vim.loop
+
+      local function select_tab_drop(prompt_bufnr)
+        local entry = action_state.get_selected_entry()
+        if not entry then
+          return action_set.select(prompt_bufnr, 'default')
+        end
+
+        local filename = entry.path or entry.filename
+        if not filename and type(entry.value) == 'string' and entry.value ~= '' then
+          filename = vim.split(entry.value, ':')[1]
+        end
+
+        if not filename or filename == '' then
+          return action_set.select(prompt_bufnr, 'default')
+        end
+
+        local picker = action_state.get_current_picker(prompt_bufnr)
+        local cwd = (picker and picker.cwd) or uv.cwd()
+        filename = Path:new(filename):normalize(cwd)
+
+        actions.close(prompt_bufnr)
+        vim.cmd('tab drop ' .. vim.fn.fnameescape(filename))
+      end
+
+      local tab_drop_mappings = {
+        i = { ['<CR>'] = select_tab_drop },
+        n = { ['<CR>'] = select_tab_drop },
+      }
 
       telescope.setup {
         defaults = {
           file_ignore_patterns = { 'node_modules/', '%.git/' },
+        },
+        pickers = {
+          find_files = { mappings = tab_drop_mappings },
+          oldfiles = { mappings = tab_drop_mappings },
+          git_files = { mappings = tab_drop_mappings },
         },
         extensions = {
           ['ui-select'] = {

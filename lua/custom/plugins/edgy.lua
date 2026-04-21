@@ -66,5 +66,23 @@ return {
         },
       },
     },
+    config = function(_, opts)
+      local edgy = require 'edgy'
+      edgy.setup(opts)
+
+      local group = vim.api.nvim_create_augroup('config-edgy-sticky-tabs', { clear = true })
+      vim.api.nvim_create_autocmd({ 'TabEnter', 'TabNewEntered' }, {
+        group = group,
+        desc = 'Keep Edgy right sidebar open across tabs',
+        callback = function()
+          vim.schedule(function()
+            if vim.v.exiting ~= 0 then
+              return
+            end
+            pcall(edgy.open, 'right')
+          end)
+        end,
+      })
+    end,
   },
 }

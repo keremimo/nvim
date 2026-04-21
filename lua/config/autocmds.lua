@@ -1,3 +1,5 @@
+local tabflow = require 'config.tabflow'
+
 local group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true })
 
 vim.api.nvim_create_autocmd('TextYankPost', {
@@ -81,23 +83,6 @@ vim.api.nvim_create_autocmd('FileType', {
 
 local auto_quit_group = vim.api.nvim_create_augroup('config-auto-quit-empty', { clear = true })
 
-local function has_real_editor_windows()
-  for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
-    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
-      if vim.api.nvim_win_is_valid(win) and vim.fn.win_gettype(win) == '' then
-        local buf = vim.api.nvim_win_get_buf(win)
-        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == '' then
-          local name = vim.api.nvim_buf_get_name(buf)
-          if name ~= '' or vim.bo[buf].modified then
-            return true
-          end
-        end
-      end
-    end
-  end
-  return false
-end
-
 local function quit_if_empty()
   if vim.v.vim_did_enter == 0 or vim.v.exiting ~= 0 then
     return
@@ -107,7 +92,7 @@ local function quit_if_empty()
     if vim.v.exiting ~= 0 then
       return
     end
-    if has_real_editor_windows() then
+    if tabflow.has_meaningful_editor_windows() then
       return
     end
     pcall(vim.cmd, 'qa')
