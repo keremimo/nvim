@@ -78,3 +78,44 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.bo[args.buf].syntax = 'markdown'
   end,
 })
+
+local auto_quit_group = vim.api.nvim_create_augroup('config-auto-quit-empty', { clear = true })
+
+local function has_real_editor_windows()
+  for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+      if vim.api.nvim_win_is_valid(win) and vim.fn.win_gettype(win) == '' then
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == '' then
+          local name = vim.api.nvim_buf_get_name(buf)
+          if name ~= '' or vim.bo[buf].modified then
+            return true
+          end
+        end
+      end
+    end
+  end
+  return false
+end
+
+local function quit_if_empty()
+  if vim.v.vim_did_enter == 0 or vim.v.exiting ~= 0 then
+    return
+  end
+
+  vim.schedule(function()
+    if vim.v.exiting ~= 0 then
+      return
+    end
+    if has_real_editor_windows() then
+      return
+    end
+    pcall(vim.cmd, 'qa')
+  end)
+end
+
+vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout', 'WinClosed', 'TabClosed' }, {
+  desc = 'Quit Neovim when only side panels remain',
+  group = auto_quit_group,
+  callback = quit_if_empty,
+})
