@@ -24,6 +24,29 @@ return {
   },
 
   {
+    'windwp/nvim-autopairs',
+    event = 'InsertEnter',
+    opts = {
+      check_ts = true,
+      disable_filetype = { 'TelescopePrompt', 'spectre_panel' },
+      fast_wrap = {},
+    },
+  },
+
+  {
+    'andweeb/presence.nvim',
+    event = 'VeryLazy',
+    opts = {
+      auto_update = true,
+      neovim_image_text = 'Neovim',
+      main_image = 'neovim',
+      enable_line_number = false,
+      blacklist = {},
+      buttons = true,
+    },
+  },
+
+  {
     'lewis6991/gitsigns.nvim',
     event = { 'BufReadPost', 'BufNewFile' },
     init = function()
