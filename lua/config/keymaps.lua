@@ -183,6 +183,7 @@ end
 -- Basics
 map('n', '<Esc>', '<cmd>nohlsearch<CR>', { desc = 'Clear search highlights' })
 map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Diagnostic location list' })
+map('i', 'jk', '<Esc>', { desc = 'Exit insert mode' })
 
 -- Terminal
 map('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
