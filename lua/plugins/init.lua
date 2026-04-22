@@ -22,7 +22,6 @@ function M.setup()
     { import = 'plugins.ui' },
     { import = 'plugins.lsp' },
     { import = 'plugins.treesitter' },
-    require('kickstart.plugins.neo-tree'),
     { import = 'custom.plugins' },
   }, {
     checker = {
