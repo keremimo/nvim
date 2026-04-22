@@ -55,7 +55,7 @@ local function select_oil_entry_tab_drop()
     vim.api.nvim_set_current_buf(buf_id)
   end
 
-  oil.select({
+  oil.select {
     close = true,
     handle_buffer_callback = function(buf_id)
       local name = vim.api.nvim_buf_get_name(buf_id)
@@ -66,14 +66,17 @@ local function select_oil_entry_tab_drop()
 
       tab_drop_buffer(buf_id)
     end,
-  })
+  }
 end
 
 return {
   {
     'stevearc/oil.nvim',
     lazy = false,
-    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    dependencies = {
+      'nvim-tree/nvim-web-devicons',
+      'refractalize/oil-git-status.nvim',
+    },
     cmd = { 'Oil' },
     keys = {
       { '-', '<CMD>Oil<CR>', desc = 'Open parent directory' },
@@ -102,6 +105,9 @@ return {
     opts = {
       default_file_explorer = true,
       columns = { 'icon' },
+      win_options = {
+        signcolumn = 'yes:2',
+      },
       keymaps = {
         ['<CR>'] = {
           callback = select_oil_entry_tab_drop,
@@ -117,5 +123,9 @@ return {
         border = 'rounded',
       },
     },
+    config = function(_, opts)
+      require('oil').setup(opts)
+      require('oil-git-status').setup()
+    end,
   },
 }
