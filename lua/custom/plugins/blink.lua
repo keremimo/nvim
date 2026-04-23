@@ -12,8 +12,6 @@ return {
         ['<C-e>'] = { 'cancel', 'fallback' },
         ['<CR>'] = { 'select_and_accept', 'fallback' },
 
-        ['<Tab>'] = { 'snippet_forward', 'select_next', 'show', 'fallback' },
-        ['<S-Tab>'] = { 'snippet_backward', 'select_prev', 'fallback' },
 
         ['<Up>'] = { 'select_prev', 'fallback' },
         ['<Down>'] = { 'select_next', 'fallback' },
