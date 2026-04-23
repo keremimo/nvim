@@ -6,8 +6,20 @@ return {
     event = 'VeryLazy',
     cmd = { 'TodoTrouble', 'TodoTelescope', 'TodoLocList', 'TodoQuickFix' },
     keys = {
-      { ']t', function() require('todo-comments').jump_next() end, desc = 'Next todo comment' },
-      { '[t', function() require('todo-comments').jump_prev() end, desc = 'Previous todo comment' },
+      {
+        ']t',
+        function()
+          require('todo-comments').jump_next()
+        end,
+        desc = 'Next todo comment',
+      },
+      {
+        '[t',
+        function()
+          require('todo-comments').jump_prev()
+        end,
+        desc = 'Previous todo comment',
+      },
       { '<leader>st', '<cmd>TodoTelescope<cr>', desc = '[S]earch [T]odo comments' },
       { '<leader>xt', '<cmd>TodoTrouble<cr>', desc = 'Todo comments (Trouble)' },
     },
@@ -41,6 +53,7 @@ return {
       neovim_image_text = 'Neovim',
       main_image = 'neovim',
       enable_line_number = false,
+      workspace_text = 'Working on a cool project',
       blacklist = {},
       buttons = true,
     },
