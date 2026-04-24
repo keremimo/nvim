@@ -72,6 +72,12 @@ return {
         vim.api.nvim_set_hl(0, 'GitSignsChangedelete', { fg = '#d19a66' })
         vim.api.nvim_set_hl(0, 'GitSignsTopdelete', { fg = '#e06c75' })
         vim.api.nvim_set_hl(0, 'GitSignsUntracked', { fg = '#56b6c2' })
+        vim.api.nvim_set_hl(0, 'GitSignsAddNr', { fg = '#6ecb63' })
+        vim.api.nvim_set_hl(0, 'GitSignsChangeNr', { fg = '#e5c07b' })
+        vim.api.nvim_set_hl(0, 'GitSignsDeleteNr', { fg = '#e06c75' })
+        vim.api.nvim_set_hl(0, 'GitSignsChangedeleteNr', { fg = '#d19a66' })
+        vim.api.nvim_set_hl(0, 'GitSignsTopdeleteNr', { fg = '#e06c75' })
+        vim.api.nvim_set_hl(0, 'GitSignsUntrackedNr', { fg = '#56b6c2' })
         vim.api.nvim_set_hl(0, 'GitSignsCurrentLineBlame', { fg = '#7f848e', italic = true })
       end
 
@@ -83,21 +89,23 @@ return {
       apply_git_highlights()
     end,
     opts = {
+      signcolumn = false,
+      numhl = true,
       signs = {
-        add = { text = '+', show_count = false },
-        change = { text = '~', show_count = false },
-        delete = { text = '_', show_count = false },
-        topdelete = { text = '_', show_count = false },
-        changedelete = { text = '~', show_count = false },
-        untracked = { text = '+', show_count = false },
+        add = { text = '', show_count = false },
+        change = { text = '', show_count = false },
+        delete = { text = '', show_count = false },
+        topdelete = { text = '', show_count = false },
+        changedelete = { text = '', show_count = false },
+        untracked = { text = '', show_count = false },
       },
       signs_staged = {
-        add = { text = '+', show_count = false },
-        change = { text = '~', show_count = false },
-        delete = { text = '_', show_count = false },
-        topdelete = { text = '_', show_count = false },
-        changedelete = { text = '~', show_count = false },
-        untracked = { text = '+', show_count = false },
+        add = { text = '', show_count = false },
+        change = { text = '', show_count = false },
+        delete = { text = '', show_count = false },
+        topdelete = { text = '', show_count = false },
+        changedelete = { text = '', show_count = false },
+        untracked = { text = '', show_count = false },
       },
       signs_staged_enable = true,
       word_diff = true,
