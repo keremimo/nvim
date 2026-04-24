@@ -87,6 +87,21 @@ vim.api.nvim_create_autocmd('FileType', {
 
 local auto_quit_group = vim.api.nvim_create_augroup('config-auto-quit-empty', { clear = true })
 
+local function has_dashboard_window()
+  for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+      if vim.api.nvim_win_is_valid(win) then
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == 'dashboard' then
+          return true
+        end
+      end
+    end
+  end
+
+  return false
+end
+
 local function quit_if_empty()
   if vim.v.vim_did_enter == 0 or is_exiting() then
     return
@@ -94,6 +109,9 @@ local function quit_if_empty()
 
   vim.schedule(function()
     if is_exiting() then
+      return
+    end
+    if has_dashboard_window() then
       return
     end
     if tabflow.has_meaningful_editor_windows() then
