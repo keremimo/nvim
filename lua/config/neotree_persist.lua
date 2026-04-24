@@ -221,6 +221,12 @@ function M.open_node_in_new_tab(state)
     return
   end
 
+  local source_tab = vim.api.nvim_get_current_tabpage()
+  local source_editor_win = M.editor_win(source_tab)
+  if is_valid_win(source_editor_win) then
+    pcall(vim.api.nvim_set_current_win, source_editor_win)
+  end
+
   if pcall(vim.cmd, 'tabnew ' .. vim.fn.fnameescape(path)) then
     vim.defer_fn(M.ensure_current, 20)
   end
