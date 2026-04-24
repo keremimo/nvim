@@ -106,6 +106,7 @@ vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout', 'WinClosed', 'TabClosed
 })
 
 local neotree_persist_group = vim.api.nvim_create_augroup('config-neotree-persistent-pane', { clear = true })
+local neotree_sidebar_pending = false
 
 local function has_neotree_in_tab(tab)
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
@@ -154,10 +155,17 @@ local function ensure_neotree_sidebar()
   if vim.v.exiting ~= 0 then
     return
   end
+  if neotree_sidebar_pending then
+    return
+  end
+
+  neotree_sidebar_pending = true
 
   local tab = vim.api.nvim_get_current_tabpage()
 
   vim.defer_fn(function()
+    neotree_sidebar_pending = false
+
     if vim.v.exiting ~= 0 or not vim.api.nvim_tabpage_is_valid(tab) then
       return
     end
@@ -169,13 +177,7 @@ local function ensure_neotree_sidebar()
     local current_buf = vim.api.nvim_get_current_buf()
     local current_ft = vim.bo[current_buf].filetype
     local current_bt = vim.bo[current_buf].buftype
-    if
-      current_ft == 'neo-tree'
-      or current_ft == 'dashboard'
-      or current_ft == 'lazy'
-      or current_ft == 'mason'
-      or current_bt ~= ''
-    then
+    if current_ft == 'neo-tree' or current_ft == 'dashboard' or current_ft == 'lazy' or current_ft == 'mason' or current_bt ~= '' then
       return
     end
 
@@ -184,7 +186,7 @@ local function ensure_neotree_sidebar()
     end
 
     force_show_neotree_sidebar()
-  end, 20)
+  end, 60)
 end
 
 vim.api.nvim_create_autocmd({ 'VimEnter', 'TabEnter', 'TabNewEntered', 'BufEnter', 'WinClosed' }, {

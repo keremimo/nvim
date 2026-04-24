@@ -9,7 +9,10 @@ return {
       notifier = { enabled = false },
       picker = { enabled = true },
       profiler = { enabled = true },
-      quickfile = { enabled = true },
+      quickfile = {
+        enabled = true,
+        exclude = { 'latex', 'markdown', 'markdown_inline' },
+      },
       scope = { enabled = true },
       words = { enabled = true },
     },

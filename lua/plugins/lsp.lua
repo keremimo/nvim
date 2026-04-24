@@ -406,7 +406,7 @@ return {
 
           local map = function(keys, func, desc, mode)
             mode = mode or 'n'
-            vim.keymap.set(mode, keys, func, { buffer = buffer, desc = desc and ('LSP: ' .. desc) or nil })
+            vim.keymap.set(mode, keys, func, { buf = buffer, desc = desc and ('LSP: ' .. desc) or nil })
           end
 
           local telescope_lsp = function(method)
@@ -463,7 +463,10 @@ return {
               end
 
               if #locations == 1 then
-                vim.lsp.util.jump_to_location(locations[1].location, locations[1].offset_encoding)
+                vim.lsp.util.show_document(locations[1].location, locations[1].offset_encoding, {
+                  focus = true,
+                  reuse_win = true,
+                })
                 return
               end
 
@@ -499,7 +502,7 @@ return {
               return ':IncRename ' .. vim.fn.expand '<cword>'
             end, {
               expr = true,
-              buffer = buffer,
+              buf = buffer,
               desc = 'LSP: [R]e[n]ame',
             })
           else
@@ -522,6 +525,21 @@ return {
             vim.notify(vim.inspect(vim.lsp.buf.list_workspace_folders()), vim.log.levels.INFO)
           end, '[C]ode [W]orkspace: [L]ist Folders')
           map('gl', vim.diagnostic.open_float, 'Open Diagnostic Float')
+          local jump_diagnostic = function(count)
+            vim.diagnostic.jump {
+              count = count,
+              on_jump = function(diagnostic, bufnr)
+                if not diagnostic then
+                  return
+                end
+                vim.diagnostic.open_float {
+                  bufnr = bufnr,
+                  focus = false,
+                  scope = 'cursor',
+                }
+              end,
+            }
+          end
           map('<leader>td', function()
             local enabled = true
             if vim.diagnostic.is_enabled then
@@ -530,29 +548,29 @@ return {
             vim.diagnostic.enable(not enabled, { bufnr = buffer })
           end, '[T]oggle [D]iagnostics')
           map(']d', function()
-            vim.diagnostic.jump { count = 1, float = true }
+            jump_diagnostic(1)
           end, 'Next Diagnostic')
           map('[d', function()
-            vim.diagnostic.jump { count = -1, float = true }
+            jump_diagnostic(-1)
           end, 'Previous Diagnostic')
 
           if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight) then
             local highlight_group = vim.api.nvim_create_augroup('config-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               group = highlight_group,
-              buffer = buffer,
+              buf = buffer,
               callback = vim.lsp.buf.document_highlight,
             })
             vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
               group = highlight_group,
-              buffer = buffer,
+              buf = buffer,
               callback = vim.lsp.buf.clear_references,
             })
             vim.api.nvim_create_autocmd('LspDetach', {
               group = vim.api.nvim_create_augroup('config-lsp-detach', { clear = true }),
               callback = function(args)
                 vim.lsp.buf.clear_references()
-                vim.api.nvim_clear_autocmds { group = highlight_group, buffer = args.buf }
+                vim.api.nvim_clear_autocmds { group = highlight_group, buf = args.buf }
               end,
             })
           end
