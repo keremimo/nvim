@@ -453,7 +453,7 @@ return {
           local ft = vim.bo[buf].filetype
           local bt = vim.bo[buf].buftype
           if
-            ft == 'oil'
+            ft == 'neo-tree'
             or ft == 'trouble'
             or ft == 'qf'
             or ft == 'help'

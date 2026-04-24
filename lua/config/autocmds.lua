@@ -104,3 +104,91 @@ vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout', 'WinClosed', 'TabClosed
   group = auto_quit_group,
   callback = quit_if_empty,
 })
+
+local neotree_persist_group = vim.api.nvim_create_augroup('config-neotree-persistent-pane', { clear = true })
+
+local function has_neotree_in_tab(tab)
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+    if vim.api.nvim_win_is_valid(win) and vim.fn.win_gettype(win) == '' then
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].filetype == 'neo-tree' then
+        return true
+      end
+    end
+  end
+  return false
+end
+
+local function has_regular_editor_in_tab(tab)
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+    if vim.api.nvim_win_is_valid(win) and vim.fn.win_gettype(win) == '' then
+      local buf = vim.api.nvim_win_get_buf(win)
+      local bt = vim.bo[buf].buftype
+      local ft = vim.bo[buf].filetype
+      if bt == '' and ft ~= 'neo-tree' and ft ~= 'dashboard' and ft ~= 'lazy' and ft ~= 'mason' then
+        return true
+      end
+    end
+  end
+  return false
+end
+
+local function force_show_neotree_sidebar()
+  local original_win = vim.api.nvim_get_current_win()
+  local ok, neotree_command = pcall(require, 'neo-tree.command')
+  if ok then
+    neotree_command.execute {
+      action = 'focus',
+      source = 'filesystem',
+      position = 'right',
+    }
+    if vim.api.nvim_win_is_valid(original_win) then
+      pcall(vim.api.nvim_set_current_win, original_win)
+    end
+  else
+    pcall(vim.cmd, 'silent! Neotree show position=right filesystem')
+  end
+end
+
+local function ensure_neotree_sidebar()
+  if vim.v.exiting ~= 0 then
+    return
+  end
+
+  local tab = vim.api.nvim_get_current_tabpage()
+
+  vim.defer_fn(function()
+    if vim.v.exiting ~= 0 or not vim.api.nvim_tabpage_is_valid(tab) then
+      return
+    end
+
+    if tab ~= vim.api.nvim_get_current_tabpage() then
+      return
+    end
+
+    local current_buf = vim.api.nvim_get_current_buf()
+    local current_ft = vim.bo[current_buf].filetype
+    local current_bt = vim.bo[current_buf].buftype
+    if
+      current_ft == 'neo-tree'
+      or current_ft == 'dashboard'
+      or current_ft == 'lazy'
+      or current_ft == 'mason'
+      or current_bt ~= ''
+    then
+      return
+    end
+
+    if has_neotree_in_tab(tab) or not has_regular_editor_in_tab(tab) then
+      return
+    end
+
+    force_show_neotree_sidebar()
+  end, 20)
+end
+
+vim.api.nvim_create_autocmd({ 'VimEnter', 'TabEnter', 'TabNewEntered', 'BufEnter', 'WinClosed' }, {
+  desc = 'Keep Neo-tree visible as a persistent sidebar per tab',
+  group = neotree_persist_group,
+  callback = ensure_neotree_sidebar,
+})

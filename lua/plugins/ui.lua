@@ -123,27 +123,68 @@ return {
       local Path = require 'plenary.path'
       local uv = vim.uv or vim.loop
 
+      local function ensure_neotree_sidebar_preserve_focus()
+        local win = vim.api.nvim_get_current_win()
+        local ok, neotree_command = pcall(require, 'neo-tree.command')
+        if ok then
+          pcall(neotree_command.execute, {
+            action = 'focus',
+            source = 'filesystem',
+            position = 'right',
+          })
+        else
+          pcall(vim.cmd, 'silent! Neotree focus position=right filesystem')
+        end
+
+        if vim.api.nvim_win_is_valid(win) then
+          pcall(vim.api.nvim_set_current_win, win)
+        end
+      end
+
+      local function resolve_entry_filename(entry, cwd)
+        local filename = entry.path or entry.filename
+        if (not filename or filename == '') and type(entry.value) == 'string' and entry.value ~= '' then
+          filename = vim.split(entry.value, ':')[1]
+        end
+        if (not filename or filename == '') and type(entry.bufnr) == 'number' and entry.bufnr > 0 then
+          filename = vim.api.nvim_buf_get_name(entry.bufnr)
+        end
+        if not filename or filename == '' then
+          return nil
+        end
+
+        local normalized = Path:new(filename):normalize(cwd)
+        local stat = uv.fs_stat(normalized)
+        if not stat or stat.type ~= 'file' then
+          return nil
+        end
+
+        return normalized
+      end
+
       local function select_tab_drop(prompt_bufnr)
         local entry = action_state.get_selected_entry()
         if not entry then
           return action_set.select(prompt_bufnr, 'default')
         end
 
-        local filename = entry.path or entry.filename
-        if not filename and type(entry.value) == 'string' and entry.value ~= '' then
-          filename = vim.split(entry.value, ':')[1]
-        end
-
-        if not filename or filename == '' then
+        local picker = action_state.get_current_picker(prompt_bufnr)
+        local cwd = (picker and picker.cwd) or uv.cwd()
+        local filename = resolve_entry_filename(entry, cwd)
+        if not filename then
           return action_set.select(prompt_bufnr, 'default')
         end
 
-        local picker = action_state.get_current_picker(prompt_bufnr)
-        local cwd = (picker and picker.cwd) or uv.cwd()
-        filename = Path:new(filename):normalize(cwd)
+        local lnum = tonumber(entry.lnum) or tonumber(entry.line)
+        local col = tonumber(entry.col) or tonumber(entry.column)
 
         actions.close(prompt_bufnr)
         vim.cmd('tab drop ' .. vim.fn.fnameescape(filename))
+        if lnum and lnum > 0 then
+          local target_col = (col and col > 0) and (col - 1) or 0
+          pcall(vim.api.nvim_win_set_cursor, 0, { lnum, target_col })
+        end
+        vim.schedule(ensure_neotree_sidebar_preserve_focus)
       end
 
       local tab_drop_mappings = {
@@ -157,6 +198,7 @@ return {
           preview = {
             treesitter = false,
           },
+          mappings = tab_drop_mappings,
         },
         pickers = {
           find_files = { mappings = tab_drop_mappings },

@@ -255,7 +255,7 @@ return {
         'help',
         'lazy',
         'mason',
-        'oil',
+        'neo-tree',
         'noice',
         'qf',
       },
