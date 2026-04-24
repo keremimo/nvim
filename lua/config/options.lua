@@ -39,7 +39,8 @@ opt.number = true
 opt.relativenumber = false
 opt.cursorline = true
 opt.laststatus = 3
-opt.cmdheight = 0
+opt.cmdheight = 1
+opt.shortmess:append 'cW'
 opt.list = true
 opt.listchars = { tab = '  ', trail = '·', nbsp = '␣' }
 opt.signcolumn = 'yes'
