@@ -31,9 +31,7 @@ local function is_valid_buf(buf)
 end
 
 local function is_pair_term_buf(buf)
-  return is_valid_buf(buf)
-    and vim.bo[buf].buftype == 'terminal'
-    and vim.b[buf].float_term_pair == true
+  return is_valid_buf(buf) and vim.bo[buf].buftype == 'terminal' and vim.b[buf].float_term_pair == true
 end
 
 local function pair_geometry(side)
@@ -217,10 +215,19 @@ map('n', '<leader>tt', '<Cmd>Themery<CR>', { silent = true, desc = '[T]oggle [T]
 map('n', '<leader>tT', '<Cmd>Telescope colorscheme enable_preview=true<CR>', { silent = true, desc = 'Theme picker (Telescope)' })
 map('n', '<leader>tn', '<Cmd>tabnext<CR>', { silent = true, desc = '[T]ab: [N]ext' })
 map('n', '<leader>tp', '<Cmd>tabprevious<CR>', { silent = true, desc = '[T]ab: [P]revious' })
-map('n', '<leader>up', function() require('config.profiles').pick() end, { desc = '[U]I: Pick workspace [P]rofile' })
-map('n', '<leader>uc', function() require('config.profiles').apply 'coding' end, { desc = '[U]I: [C]oding profile' })
-map('n', '<leader>uw', function() require('config.profiles').apply 'writing' end, { desc = '[U]I: [W]riting profile' })
-map('n', '<leader>ud', function() require('config.profiles').apply 'debugging' end, { desc = '[U]I: [D]ebugging profile' })
+map('n', '<leader>up', function()
+  require('config.profiles').pick()
+end, { desc = '[U]I: Pick workspace [P]rofile' })
+map('n', '<leader>uC', '<Cmd>ConfigMenu<CR>', { silent = true, desc = '[U]I: [C]onfig menu' })
+map('n', '<leader>uc', function()
+  require('config.profiles').apply 'coding'
+end, { desc = '[U]I: [C]oding profile' })
+map('n', '<leader>uw', function()
+  require('config.profiles').apply 'writing'
+end, { desc = '[U]I: [W]riting profile' })
+map('n', '<leader>ud', function()
+  require('config.profiles').apply 'debugging'
+end, { desc = '[U]I: [D]ebugging profile' })
 
 vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
   group = vim.api.nvim_create_augroup('config-float-pair-terminal-focus', { clear = true }),

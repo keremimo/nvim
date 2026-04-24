@@ -1,5 +1,9 @@
 local tabflow = require 'config.tabflow'
 
+local function is_exiting()
+  return vim.v.exiting ~= nil and vim.v.exiting ~= vim.NIL and vim.v.exiting ~= 0
+end
+
 local group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true })
 
 vim.api.nvim_create_autocmd('TextYankPost', {
@@ -84,12 +88,12 @@ vim.api.nvim_create_autocmd('FileType', {
 local auto_quit_group = vim.api.nvim_create_augroup('config-auto-quit-empty', { clear = true })
 
 local function quit_if_empty()
-  if vim.v.vim_did_enter == 0 or vim.v.exiting ~= 0 then
+  if vim.v.vim_did_enter == 0 or is_exiting() then
     return
   end
 
   vim.schedule(function()
-    if vim.v.exiting ~= 0 then
+    if is_exiting() then
       return
     end
     if tabflow.has_meaningful_editor_windows() then
@@ -105,92 +109,38 @@ vim.api.nvim_create_autocmd({ 'BufDelete', 'BufWipeout', 'WinClosed', 'TabClosed
   callback = quit_if_empty,
 })
 
+local neotree_persist = require 'config.neotree_persist'
 local neotree_persist_group = vim.api.nvim_create_augroup('config-neotree-persistent-pane', { clear = true })
-local neotree_sidebar_pending = false
 
-local function has_neotree_in_tab(tab)
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
-    if vim.api.nvim_win_is_valid(win) and vim.fn.win_gettype(win) == '' then
-      local buf = vim.api.nvim_win_get_buf(win)
-      if vim.bo[buf].filetype == 'neo-tree' then
-        return true
-      end
-    end
-  end
-  return false
-end
-
-local function has_regular_editor_in_tab(tab)
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
-    if vim.api.nvim_win_is_valid(win) and vim.fn.win_gettype(win) == '' then
-      local buf = vim.api.nvim_win_get_buf(win)
-      local bt = vim.bo[buf].buftype
-      local ft = vim.bo[buf].filetype
-      if bt == '' and ft ~= 'neo-tree' and ft ~= 'dashboard' and ft ~= 'lazy' and ft ~= 'mason' then
-        return true
-      end
-    end
-  end
-  return false
-end
-
-local function force_show_neotree_sidebar()
-  local original_win = vim.api.nvim_get_current_win()
-  local ok, neotree_command = pcall(require, 'neo-tree.command')
-  if ok then
-    neotree_command.execute {
-      action = 'focus',
-      source = 'filesystem',
-      position = 'right',
-    }
-    if vim.api.nvim_win_is_valid(original_win) then
-      pcall(vim.api.nvim_set_current_win, original_win)
-    end
-  else
-    pcall(vim.cmd, 'silent! Neotree show position=right filesystem')
-  end
-end
-
-local function ensure_neotree_sidebar()
-  if vim.v.exiting ~= 0 then
-    return
-  end
-  if neotree_sidebar_pending then
-    return
-  end
-
-  neotree_sidebar_pending = true
-
-  local tab = vim.api.nvim_get_current_tabpage()
-
-  vim.defer_fn(function()
-    neotree_sidebar_pending = false
-
-    if vim.v.exiting ~= 0 or not vim.api.nvim_tabpage_is_valid(tab) then
-      return
-    end
-
-    if tab ~= vim.api.nvim_get_current_tabpage() then
-      return
-    end
-
-    local current_buf = vim.api.nvim_get_current_buf()
-    local current_ft = vim.bo[current_buf].filetype
-    local current_bt = vim.bo[current_buf].buftype
-    if current_ft == 'neo-tree' or current_ft == 'dashboard' or current_ft == 'lazy' or current_ft == 'mason' or current_bt ~= '' then
-      return
-    end
-
-    if has_neotree_in_tab(tab) or not has_regular_editor_in_tab(tab) then
-      return
-    end
-
-    force_show_neotree_sidebar()
-  end, 60)
-end
-
-vim.api.nvim_create_autocmd({ 'VimEnter', 'TabEnter', 'TabNewEntered', 'BufEnter', 'WinClosed' }, {
+vim.api.nvim_create_autocmd({ 'TabEnter', 'TabNewEntered', 'BufEnter', 'BufWinEnter', 'WinClosed' }, {
   desc = 'Keep Neo-tree visible as a persistent sidebar per tab',
   group = neotree_persist_group,
-  callback = ensure_neotree_sidebar,
+  callback = function()
+    neotree_persist.schedule_all(80, 6)
+  end,
+})
+
+vim.api.nvim_create_autocmd('VimEnter', {
+  desc = 'Restore Neo-tree sidebars after startup settles',
+  group = neotree_persist_group,
+  callback = function()
+    neotree_persist.schedule_all(250, 20)
+  end,
+})
+
+vim.api.nvim_create_autocmd('SessionLoadPost', {
+  desc = 'Restore Neo-tree sidebars after loading a Vim session',
+  group = neotree_persist_group,
+  callback = function()
+    neotree_persist.schedule_all(250, 20)
+  end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+  desc = 'Restore Neo-tree sidebars after plugin startup and Persistence loads',
+  group = neotree_persist_group,
+  pattern = { 'LazyDone', 'VeryLazy', 'PersistenceLoadPost' },
+  callback = function()
+    neotree_persist.schedule_all(250, 20)
+  end,
 })

@@ -1,3 +1,5 @@
+local neotree_persist = require 'config.neotree_persist'
+
 local function jump_to_editor_window()
   local current_tab = vim.api.nvim_get_current_tabpage()
   local previous_win = vim.fn.win_getid(vim.fn.winnr '#')
@@ -37,6 +39,7 @@ return {
     'nvim-neo-tree/neo-tree.nvim',
     branch = 'v3.x',
     cmd = { 'Neotree' },
+    event = 'VeryLazy',
     dependencies = {
       'nvim-lua/plenary.nvim',
       'MunifTanjim/nui.nvim',
@@ -53,18 +56,21 @@ return {
       popup_border_style = 'rounded',
       enable_git_status = true,
       enable_diagnostics = true,
+      commands = {
+        open_in_new_tab_persistent = neotree_persist.open_node_in_new_tab,
+      },
       event_handlers = {
         {
           event = 'file_opened',
           handler = function()
             vim.defer_fn(function()
-              if vim.v.exiting ~= 0 then
+              if neotree_persist.is_exiting() then
                 return
               end
               if vim.bo[vim.api.nvim_get_current_buf()].filetype == 'neo-tree' then
                 return
               end
-              pcall(vim.cmd, 'silent! Neotree show position=right filesystem')
+              neotree_persist.ensure_current()
             end, 20)
           end,
         },
@@ -82,8 +88,8 @@ return {
       filesystem = {
         window = {
           mappings = {
-            ['<CR>'] = 'open_tab_drop',
-            ['<2-LeftMouse>'] = 'open_tab_drop',
+            ['<CR>'] = 'open_in_new_tab_persistent',
+            ['<2-LeftMouse>'] = 'open_in_new_tab_persistent',
           },
         },
         filtered_items = {
@@ -99,6 +105,7 @@ return {
     },
     config = function(_, opts)
       require('neo-tree').setup(opts)
+      neotree_persist.schedule_all(250, 20)
     end,
   },
 }

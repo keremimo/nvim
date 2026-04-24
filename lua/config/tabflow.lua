@@ -12,6 +12,10 @@ local function is_editor_buffer(buf)
   return is_valid_buf(buf) and vim.bo[buf].buftype == ''
 end
 
+local function is_exiting()
+  return vim.v.exiting ~= nil and vim.v.exiting ~= vim.NIL and vim.v.exiting ~= 0
+end
+
 function M.is_real_editor_window(win)
   if not is_valid_win(win) or vim.fn.win_gettype(win) ~= '' then
     return false
@@ -78,7 +82,7 @@ function M.close_current_target()
   pcall(vim.cmd, 'q')
 
   vim.schedule(function()
-    if vim.v.exiting ~= 0 then
+    if is_exiting() then
       return
     end
     if M.has_meaningful_editor_windows() then
