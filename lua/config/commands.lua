@@ -124,6 +124,12 @@ vim.api.nvim_create_user_command('ConfigMenu', function()
       end,
     },
     {
+      label = 'Toggle transparency (' .. (require('config.transparency').is_enabled() and 'on' or 'off') .. ')',
+      run = function()
+        require('config.transparency').toggle()
+      end,
+    },
+    {
       label = 'Lazy stats',
       run = function()
         vim.cmd 'LazyStats'

@@ -819,6 +819,7 @@ return {
       timeout = 3000,
       stages = 'fade_in_slide_out',
       render = 'wrapped-compact',
+      background_colour = '#000000',
       max_width = function()
         return math.floor(vim.o.columns * 0.4)
       end,

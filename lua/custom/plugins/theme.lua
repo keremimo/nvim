@@ -1,8 +1,15 @@
 local default_scheme = 'tokyonight-moon'
 
+local function configure_transparent_themes(plugin)
+  require('config.transparency').configure_theme_integrations {
+    modules = plugin.modules,
+  }
+end
+
 local theme_plugins = {
   {
     repo = 'folke/tokyonight.nvim',
+    modules = { 'tokyonight' },
     lazy = false,
     priority = 1000,
     schemes = { 'tokyonight', 'tokyonight-night', 'tokyonight-storm', 'tokyonight-day', 'tokyonight-moon' },
@@ -15,6 +22,7 @@ local theme_plugins = {
   {
     repo = 'rose-pine/neovim',
     name = 'rose-pine',
+    modules = { 'rose-pine' },
     schemes = { 'rose-pine', 'rose-pine-main', 'rose-pine-moon', 'rose-pine-dawn' },
   },
   {
@@ -47,16 +55,19 @@ local theme_plugins = {
   },
   {
     repo = 'rebelot/kanagawa.nvim',
+    modules = { 'kanagawa' },
     schemes = { 'kanagawa', 'kanagawa-wave', 'kanagawa-dragon', 'kanagawa-lotus' },
   },
   {
     repo = 'EdenEast/nightfox.nvim',
+    modules = { 'nightfox' },
     schemes = { 'nightfox', 'dayfox', 'dawnfox', 'duskfox', 'nordfox', 'terafox', 'carbonfox' },
   },
-  { repo = 'Mofiqul/vscode.nvim', schemes = { 'vscode' } },
-  { repo = 'navarasu/onedark.nvim', schemes = { 'onedark' } },
+  { repo = 'Mofiqul/vscode.nvim', modules = { 'vscode' }, schemes = { 'vscode' } },
+  { repo = 'navarasu/onedark.nvim', modules = { 'onedark' }, schemes = { 'onedark' } },
   {
     repo = 'projekt0n/github-nvim-theme',
+    modules = { 'github-theme' },
     schemes = {
       'github_dark',
       'github_dark_default',
@@ -67,16 +78,17 @@ local theme_plugins = {
       'github_light_high_contrast',
     },
   },
-  { repo = 'Mofiqul/dracula.nvim', schemes = { 'dracula' } },
+  { repo = 'Mofiqul/dracula.nvim', modules = { 'dracula' }, schemes = { 'dracula' } },
   {
     repo = 'marko-cerovac/material.nvim',
+    modules = { 'material' },
     schemes = { 'material', 'material-darker', 'material-lighter', 'material-oceanic', 'material-palenight', 'material-deep-ocean' },
   },
-  { repo = 'ellisonleao/gruvbox.nvim', schemes = { 'gruvbox' } },
-  { repo = 'Shatur/neovim-ayu', schemes = { 'ayu', 'ayu-dark', 'ayu-light', 'ayu-mirage' } },
+  { repo = 'ellisonleao/gruvbox.nvim', modules = { 'gruvbox' }, schemes = { 'gruvbox' } },
+  { repo = 'Shatur/neovim-ayu', modules = { 'ayu' }, schemes = { 'ayu', 'ayu-dark', 'ayu-light', 'ayu-mirage' } },
   { repo = 'bluz71/vim-moonfly-colors', schemes = { 'moonfly' } },
   { repo = 'bluz71/vim-nightfly-colors', schemes = { 'nightfly' } },
-  { repo = 'tiagovla/tokyodark.nvim', schemes = { 'tokyodark' } },
+  { repo = 'tiagovla/tokyodark.nvim', modules = { 'tokyodark' }, schemes = { 'tokyodark' } },
   { repo = 'nyoom-engineering/oxocarbon.nvim', schemes = { 'oxocarbon' } },
   { repo = 'dasupradyumna/midnight.nvim', schemes = { 'midnight' } },
 }
@@ -94,7 +106,33 @@ local function lazy_load_before(plugin)
     table.insert(lines, plugin.before)
   end
 
+  table.insert(
+    lines,
+    string.format(
+      "require('config.transparency').configure_theme_integrations({ modules = %s })",
+      vim.inspect(plugin.modules or {})
+    )
+  )
+
   return table.concat(lines, '\n')
+end
+
+local function plugin_config(plugin)
+  return function()
+    configure_transparent_themes(plugin)
+    if plugin.config then
+      plugin.config()
+    end
+  end
+end
+
+local function plugin_init(plugin)
+  return function()
+    if plugin.init then
+      plugin.init()
+    end
+    require('config.transparency').configure_theme_integrations()
+  end
 end
 
 local function build_themes()
@@ -125,8 +163,8 @@ for _, plugin in ipairs(theme_plugins) do
     name = plugin.name,
     lazy = plugin.lazy ~= false,
     priority = plugin.priority,
-    init = plugin.init,
-    config = plugin.config,
+    init = plugin_init(plugin),
+    config = plugin_config(plugin),
   })
 end
 

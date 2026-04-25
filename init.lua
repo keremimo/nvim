@@ -4,6 +4,7 @@ end
 
 -- Core settings
 require 'config.options'
+require('config.transparency').setup()
 require 'config.keymaps'
 require 'config.autocmds'
 require 'config.commands'
