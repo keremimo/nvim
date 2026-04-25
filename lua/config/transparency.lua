@@ -3,6 +3,7 @@ local M = {}
 local state_path = vim.fn.stdpath('state') .. '/config-transparency'
 
 local state = {
+  current_scheme = nil,
   enabled = false,
   setup = false,
 }
@@ -183,9 +184,15 @@ local function schedule_apply()
 end
 
 local function reload_colorscheme()
-  local scheme = vim.g.colors_name
+  local scheme = state.current_scheme or vim.g.colors_name
   if type(scheme) == 'string' and scheme ~= '' then
     pcall(vim.cmd.colorscheme, scheme)
+  end
+end
+
+local function remember_colorscheme(args)
+  if args and type(args.match) == 'string' and args.match ~= '' then
+    state.current_scheme = args.match
   end
 end
 
@@ -441,7 +448,8 @@ function M.setup()
 
   vim.api.nvim_create_autocmd('ColorSchemePre', {
     group = group,
-    callback = function()
+    callback = function(args)
+      remember_colorscheme(args)
       M.configure_theme_integrations()
     end,
     desc = 'Configure native theme transparency before colorscheme loads',
@@ -449,7 +457,10 @@ function M.setup()
 
   vim.api.nvim_create_autocmd('ColorScheme', {
     group = group,
-    callback = M.apply,
+    callback = function(args)
+      remember_colorscheme(args)
+      M.apply()
+    end,
     desc = 'Reapply transparent backgrounds after colorscheme changes',
   })
 

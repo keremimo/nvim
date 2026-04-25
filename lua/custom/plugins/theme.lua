@@ -170,7 +170,8 @@ end
 
 table.insert(specs, {
   'zaldih/themery.nvim',
-  cmd = 'Themery',
+  lazy = false,
+  priority = 1001,
   opts = {
     themes = build_themes(),
     livePreview = true,
