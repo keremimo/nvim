@@ -63,33 +63,6 @@ return {
               end,
             },
             {
-              icon = '  ',
-              desc = 'Coding Profile',
-              key = 'c',
-              keymap = 'SPC u c',
-              action = function()
-                require('config.profiles').apply 'coding'
-              end,
-            },
-            {
-              icon = '  ',
-              desc = 'Writing Profile',
-              key = 'w',
-              keymap = 'SPC u w',
-              action = function()
-                require('config.profiles').apply 'writing'
-              end,
-            },
-            {
-              icon = '  ',
-              desc = 'Debugging Profile',
-              key = 'd',
-              keymap = 'SPC u d',
-              action = function()
-                require('config.profiles').apply 'debugging'
-              end,
-            },
-            {
               icon = '  ',
               desc = 'Lazy',
               key = 'l',

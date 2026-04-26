@@ -2,6 +2,33 @@ local function executable(cmd)
   return vim.fn.executable(cmd) == 1
 end
 
+local function close_tab_range(first, last, step)
+  for tabnr = first, last, step do
+    local ok, err = pcall(vim.cmd, tabnr .. 'tabclose')
+    if not ok then
+      vim.notify(err, vim.log.levels.WARN)
+      return
+    end
+  end
+end
+
+local function close_tabs_left()
+  local current = vim.fn.tabpagenr()
+  if current <= 1 then
+    return
+  end
+  close_tab_range(current - 1, 1, -1)
+end
+
+local function close_tabs_right()
+  local current = vim.fn.tabpagenr()
+  local last = vim.fn.tabpagenr '$'
+  if current >= last then
+    return
+  end
+  close_tab_range(last, current + 1, -1)
+end
+
 local js_debug_filetypes = { 'javascript', 'javascriptreact', 'typescript', 'typescriptreact' }
 
 local function load_js_launchjs()
@@ -627,51 +654,76 @@ return {
   },
 
   {
-    'akinsho/bufferline.nvim',
-    version = '*',
+    'nanozuki/tabby.nvim',
     event = 'VimEnter',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     keys = {
-      { '<S-h>', '<cmd>BufferLineCyclePrev<CR>', desc = 'Tab: Previous' },
-      { '<S-l>', '<cmd>BufferLineCycleNext<CR>', desc = 'Tab: Next' },
-      { '[b', '<cmd>BufferLineCyclePrev<CR>', desc = 'Tab: Previous' },
-      { ']b', '<cmd>BufferLineCycleNext<CR>', desc = 'Tab: Next' },
+      { '<S-h>', '<cmd>tabprevious<CR>', desc = 'Tab: Previous' },
+      { '<S-l>', '<cmd>tabnext<CR>', desc = 'Tab: Next' },
+      { '[b', '<cmd>tabprevious<CR>', desc = 'Tab: Previous' },
+      { ']b', '<cmd>tabnext<CR>', desc = 'Tab: Next' },
       {
         '<leader>bc',
         function()
           require('config.tabflow').close_current_target()
         end,
-        desc = '[B]uffer: [C]lose current tab/target',
+        desc = '[B]uffer/Tab: [C]lose current target',
       },
-      { '<leader>bo', '<cmd>BufferLineCloseOthers<CR>', desc = '[B]uffer: Close [O]ther tabs' },
-      { '<leader>bP', '<cmd>BufferLinePick<CR>', desc = '[B]uffer: [P]ick tab' },
-      { '<leader>b,', '<cmd>BufferLineMovePrev<CR>', desc = '[B]uffer: Move tab left' },
-      { '<leader>b.', '<cmd>BufferLineMoveNext<CR>', desc = '[B]uffer: Move tab right' },
-      { '<leader>bl', '<cmd>BufferLineCloseLeft<CR>', desc = '[B]uffer: Close tabs [L]eft' },
-      { '<leader>br', '<cmd>BufferLineCloseRight<CR>', desc = '[B]uffer: Close tabs [R]ight' },
-      { '<leader>bn', '<cmd>tabnew<CR>', desc = '[B]uffer: [N]ew tab' },
+      { '<leader>bo', '<cmd>tabonly<CR>', desc = '[B]uffer/Tab: Close [O]ther tabs' },
+      { '<leader>bP', '<cmd>Tabby jump_to_tab<CR>', desc = '[B]uffer/Tab: [P]ick tab' },
+      { '<leader>b,', '<cmd>-tabmove<CR>', desc = '[B]uffer/Tab: Move tab left' },
+      { '<leader>b.', '<cmd>+tabmove<CR>', desc = '[B]uffer/Tab: Move tab right' },
+      { '<leader>bl', close_tabs_left, desc = '[B]uffer/Tab: Close tabs [L]eft' },
+      { '<leader>br', close_tabs_right, desc = '[B]uffer/Tab: Close tabs [R]ight' },
+      { '<leader>bn', '<cmd>tabnew<CR>', desc = '[B]uffer/Tab: [N]ew tab' },
     },
     opts = {
-      options = {
-        mode = 'tabs',
-        numbers = 'ordinal',
-        indicator = {
-          icon = '▎',
-          style = 'icon',
+      preset = 'tab_only',
+      option = {
+        nerdfont = vim.g.have_nerd_font,
+        theme = {
+          fill = 'TabLineFill',
+          head = 'TabLine',
+          current_tab = 'TabLineSel',
+          tab = 'TabLine',
+          win = 'TabLine',
+          tail = 'TabLine',
         },
-        hover = {
-          enabled = true,
-          delay = 120,
-          reveal = { 'close' },
+        tab_name = {
+          name_fallback = function(tabid)
+            local current_win = vim.api.nvim_tabpage_get_win(tabid)
+            local wins = { current_win }
+            for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tabid)) do
+              if win ~= current_win then
+                table.insert(wins, win)
+              end
+            end
+
+            for _, win in ipairs(wins) do
+              if vim.api.nvim_win_is_valid(win) and vim.fn.win_gettype(win) == '' then
+                local buf = vim.api.nvim_win_get_buf(win)
+                local name = vim.api.nvim_buf_get_name(buf)
+                if name ~= '' then
+                  return vim.fn.fnamemodify(name, ':t')
+                end
+                if vim.bo[buf].modified then
+                  return '[No Name]'
+                end
+              end
+            end
+
+            for index, tab in ipairs(vim.api.nvim_list_tabpages()) do
+              if tab == tabid then
+                return 'Tab ' .. index
+              end
+            end
+
+            return 'Tab'
+          end,
         },
-        separator_style = 'slant',
-        max_name_length = 28,
-        max_prefix_length = 18,
-        truncate_names = true,
-        tab_size = 22,
-        always_show_bufferline = true,
-        show_buffer_close_icons = true,
-        show_close_icon = false,
+        buf_name = {
+          mode = 'unique',
+        },
       },
     },
   },

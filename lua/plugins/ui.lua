@@ -37,7 +37,7 @@ return {
         },
       },
       spec = {
-        { '<leader>b', group = '[B]uffers' },
+        { '<leader>b', group = '[B]uffers / Tabs' },
         { '<leader>c', group = '[C]ode', mode = { 'n', 'x' } },
         { '<leader>d', group = '[D]ocument / Debug' },
         { '<leader>g', group = '[G]it' },
