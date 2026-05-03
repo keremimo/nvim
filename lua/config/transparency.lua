@@ -108,6 +108,8 @@ local preserve_patterns = {
   'Match',
   '^Diff',
   '^Spell',
+  '^TabLineSel$',
+  '^lualine_a_',
   'Pmenu.*Sel$',
 }
 

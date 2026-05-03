@@ -1,4 +1,13 @@
-local default_scheme = 'tokyonight-moon'
+local noctalia = require 'config.noctalia'
+local default_scheme = noctalia.should_prefer() and 'noctalia' or 'tokyonight-moon'
+
+local local_themes = {
+  {
+    name = 'noctalia',
+    colorscheme = 'noctalia',
+    before = noctalia.themery_before_code(),
+  },
+}
 
 local function configure_transparent_themes(plugin)
   require('config.transparency').configure_theme_integrations {
@@ -138,6 +147,10 @@ end
 local function build_themes()
   local themes = {}
 
+  for _, theme in ipairs(local_themes) do
+    table.insert(themes, theme)
+  end
+
   for _, plugin in ipairs(theme_plugins) do
     for _, scheme in ipairs(plugin.schemes) do
       table.insert(themes, {
@@ -153,6 +166,17 @@ local function build_themes()
   end)
 
   return themes
+end
+
+local themes = build_themes()
+
+local function theme_index(name)
+  for index, theme in ipairs(themes) do
+    if theme.name == name or theme.colorscheme == name then
+      return index
+    end
+  end
+  return nil
 end
 
 local specs = {}
@@ -172,8 +196,14 @@ table.insert(specs, {
   'zaldih/themery.nvim',
   lazy = false,
   priority = 1001,
+  init = function()
+    noctalia.prefer_themery_state(theme_index 'noctalia')
+    if noctalia.should_prefer() then
+      noctalia.setup_autoreload()
+    end
+  end,
   opts = {
-    themes = build_themes(),
+    themes = themes,
     livePreview = true,
   },
 })
