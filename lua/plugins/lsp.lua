@@ -415,28 +415,6 @@ return {
             end
           end
 
-          local glance_or_telescope = function(glance_method, telescope_method)
-            return function()
-              local ok_glance, glance = pcall(require, 'glance')
-              if ok_glance and glance and glance.actions then
-                glance.actions.open(glance_method, {
-                  hooks = {
-                    before_open = function(results, open, jump)
-                      if results and #results == 1 then
-                        jump(results[1])
-                        return
-                      end
-                      open(results)
-                    end,
-                  },
-                })
-                return
-              end
-
-              require('telescope.builtin')[telescope_method]()
-            end
-          end
-
           local declaration_or_jump = function()
             local params = vim.lsp.util.make_position_params()
             vim.lsp.buf_request_all(buffer, 'textDocument/declaration', params, function(results)
@@ -490,11 +468,11 @@ return {
             end)
           end
 
-          map('gd', glance_or_telescope('definitions', 'lsp_definitions'), '[G]oto [D]efinition')
-          map('gr', glance_or_telescope('references', 'lsp_references'), '[G]oto [R]eferences')
-          map('gi', glance_or_telescope('implementations', 'lsp_implementations'), '[G]oto [I]mplementation')
-          map('gI', glance_or_telescope('implementations', 'lsp_implementations'), '[G]oto [I]mplementation')
-          map('<leader>D', glance_or_telescope('type_definitions', 'lsp_type_definitions'), 'Type [D]efinition')
+          map('gd', telescope_lsp 'lsp_definitions', '[G]oto [D]efinition')
+          map('gr', telescope_lsp 'lsp_references', '[G]oto [R]eferences')
+          map('gi', telescope_lsp 'lsp_implementations', '[G]oto [I]mplementation')
+          map('gI', telescope_lsp 'lsp_implementations', '[G]oto [I]mplementation')
+          map('<leader>D', telescope_lsp 'lsp_type_definitions', 'Type [D]efinition')
           map('<leader>ds', telescope_lsp 'lsp_document_symbols', '[D]ocument [S]ymbols')
           map('<leader>sW', telescope_lsp 'lsp_dynamic_workspace_symbols', '[S]earch [W]orkspace Symbols')
           if vim.fn.exists ':IncRename' == 2 then
@@ -589,6 +567,7 @@ return {
               vim.lsp.codelens.enable(false, { bufnr = buffer })
               vim.lsp.codelens.enable(true, { bufnr = buffer })
             end, '[C]ode Lens: Refresh')
+            map('<leader>cr', vim.lsp.codelens.run, '[C]ode Lens: [R]un')
             map('<leader>cA', vim.lsp.codelens.run, '[C]ode Lens: Run Action')
           end
         end,

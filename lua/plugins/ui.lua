@@ -42,7 +42,6 @@ return {
         { '<leader>d', group = '[D]ocument / Debug' },
         { '<leader>g', group = '[G]it' },
         { '<leader>j', group = '[J]ump list' },
-        { '<leader>l', group = '[L]SP Peek' },
         { '<leader>m', group = '[M]ake / Tasks' },
         { '<leader>n', group = '[N]eotest' },
         { '<leader>o', group = 'GitHub [O]cto' },
@@ -198,7 +197,6 @@ return {
           preview = {
             treesitter = false,
           },
-          mappings = tab_drop_mappings,
         },
         pickers = {
           find_files = { mappings = tab_drop_mappings },
