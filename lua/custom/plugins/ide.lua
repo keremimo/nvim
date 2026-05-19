@@ -209,6 +209,7 @@ return {
     keys = {
       { '<leader>nn', function() require('neotest').run.run() end, desc = 'Test: Run nearest' },
       { '<leader>nf', function() require('neotest').run.run(vim.fn.expand '%') end, desc = 'Test: Run file' },
+      { '<leader>rt', function() require('neotest').run.run(vim.fn.expand '%') end, desc = '[R]un current file [T]ests' },
       {
         '<leader>na',
         function()

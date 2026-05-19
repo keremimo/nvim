@@ -46,7 +46,7 @@ return {
         { '<leader>n', group = '[N]eotest' },
         { '<leader>o', group = 'GitHub [O]cto' },
         { '<leader>p', group = '[P]ersistence' },
-        { '<leader>r', group = '[R]ename' },
+        { '<leader>r', group = '[R]un / Rename' },
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>u', group = '[U]ndo / UI helpers' },
