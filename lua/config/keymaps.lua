@@ -17,12 +17,10 @@ local function is_valid_win(win)
   return type(win) == 'number' and win > 0 and vim.api.nvim_win_is_valid(win)
 end
 
-local float_term_pair = {
-  left = { buf = nil, win = nil, job = nil },
-  right = { buf = nil, win = nil, job = nil },
-}
-
-local pair_focus_state = {
+local float_term = {
+  buf = nil,
+  win = nil,
+  job = nil,
   previous_win = nil,
 }
 
@@ -30,25 +28,17 @@ local function is_valid_buf(buf)
   return type(buf) == 'number' and buf > 0 and vim.api.nvim_buf_is_valid(buf)
 end
 
-local function is_pair_term_buf(buf)
-  return is_valid_buf(buf) and vim.bo[buf].buftype == 'terminal' and vim.b[buf].float_term_pair == true
+local function is_float_term_buf(buf)
+  return is_valid_buf(buf) and vim.bo[buf].buftype == 'terminal' and vim.b[buf].float_term == true
 end
 
-local function pair_geometry(side)
+local function float_term_geometry()
   local cols = vim.o.columns
   local lines = vim.o.lines
   local padding_x = math.max(math.floor(cols * 0.03), 1)
-  local gap = 1
-  local max_width = math.max(cols - padding_x * 2 - gap, 20)
-  local width = math.max(math.floor(max_width / 2), 10)
+  local width = math.max(cols - padding_x * 2, 20)
   local height = math.max(math.floor(lines * 0.38), 8)
   local row = math.max(lines - height - 4, 1)
-  local left_col = padding_x
-  local right_col = left_col + width + gap
-
-  if right_col + width > cols then
-    right_col = math.max(cols - width, left_col + gap)
-  end
 
   return {
     relative = 'editor',
@@ -57,125 +47,112 @@ local function pair_geometry(side)
     width = width,
     height = height,
     row = row,
-    col = side == 'left' and left_col or right_col,
+    col = padding_x,
     zindex = 50,
   }
 end
 
-local function pair_job_running(job)
+local function float_term_job_running(job)
   if type(job) ~= 'number' or job <= 0 then
     return false
   end
   return vim.fn.jobwait({ job }, 0)[1] == -1
 end
 
-local function ensure_pair_terminal(entry)
-  if not is_valid_buf(entry.buf) then
-    entry.buf = vim.api.nvim_create_buf(false, false)
-    vim.bo[entry.buf].bufhidden = 'hide'
-    vim.b[entry.buf].float_term_pair = true
-    entry.job = nil
+local function ensure_float_terminal()
+  if not is_valid_buf(float_term.buf) then
+    float_term.buf = vim.api.nvim_create_buf(false, false)
+    vim.bo[float_term.buf].bufhidden = 'hide'
+    vim.b[float_term.buf].float_term = true
+    float_term.job = nil
   end
 
-  if not pair_job_running(entry.job) then
-    vim.api.nvim_buf_call(entry.buf, function()
-      entry.job = vim.fn.termopen(vim.o.shell)
+  if not float_term_job_running(float_term.job) then
+    vim.api.nvim_buf_call(float_term.buf, function()
+      float_term.job = vim.fn.termopen(vim.o.shell)
     end)
-    vim.b[entry.buf].float_term_pair = true
+    vim.b[float_term.buf].float_term = true
   end
 end
 
-local function close_pair_windows()
-  for _, entry in pairs(float_term_pair) do
-    if is_valid_win(entry.win) then
-      pcall(vim.api.nvim_win_close, entry.win, true)
-    end
-    entry.win = nil
+local function close_float_terminal()
+  if is_valid_win(float_term.win) then
+    pcall(vim.api.nvim_win_close, float_term.win, true)
   end
+  float_term.win = nil
 end
 
-local function is_pair_window(win)
-  if not is_valid_win(win) then
-    return false
-  end
-  return win == float_term_pair.left.win or win == float_term_pair.right.win
+local function is_float_term_window(win)
+  return is_valid_win(win) and win == float_term.win
 end
 
-local function find_non_pair_window()
+local function find_non_float_term_window()
   for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    if is_valid_win(win) and not is_pair_window(win) then
+    if is_valid_win(win) and not is_float_term_window(win) then
       local buf = vim.api.nvim_win_get_buf(win)
-      if not is_pair_term_buf(buf) then
+      if not is_float_term_buf(buf) then
         return win
       end
     end
   end
 end
 
-local function focus_pair_window(win)
-  if not is_valid_win(win) then
+local function focus_float_terminal()
+  if not is_valid_win(float_term.win) then
     return false
   end
-  vim.api.nvim_set_current_win(win)
+  vim.api.nvim_set_current_win(float_term.win)
   vim.schedule(function()
-    if is_pair_term_buf(vim.api.nvim_get_current_buf()) and vim.fn.mode() ~= 't' then
+    if is_float_term_buf(vim.api.nvim_get_current_buf()) and vim.fn.mode() ~= 't' then
       vim.cmd.startinsert()
     end
   end)
   return true
 end
 
-local function pair_window_open_in_current_tab()
-  local tab_wins = {}
-  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-    tab_wins[win] = true
+local function float_terminal_open_in_current_tab()
+  if not is_valid_win(float_term.win) then
+    return false
   end
-  for _, entry in pairs(float_term_pair) do
-    if is_valid_win(entry.win) and tab_wins[entry.win] then
+
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if win == float_term.win then
       return true
     end
   end
   return false
 end
 
-local function open_pair_windows()
-  close_pair_windows()
-  ensure_pair_terminal(float_term_pair.left)
-  ensure_pair_terminal(float_term_pair.right)
-
-  float_term_pair.left.win = vim.api.nvim_open_win(float_term_pair.left.buf, false, pair_geometry 'left')
-  float_term_pair.right.win = vim.api.nvim_open_win(float_term_pair.right.buf, false, pair_geometry 'right')
-  focus_pair_window(float_term_pair.left.win)
+local function open_float_terminal()
+  close_float_terminal()
+  ensure_float_terminal()
+  float_term.win = vim.api.nvim_open_win(float_term.buf, false, float_term_geometry())
+  focus_float_terminal()
 end
 
-local function cycle_pair_terminals()
+local function toggle_float_terminal()
   local current = vim.api.nvim_get_current_win()
 
-  if not pair_window_open_in_current_tab() then
-    pair_focus_state.previous_win = current
-    open_pair_windows()
+  if not float_terminal_open_in_current_tab() then
+    float_term.previous_win = current
+    open_float_terminal()
     return
   end
 
-  if current == float_term_pair.left.win then
-    focus_pair_window(float_term_pair.right.win)
-    return
-  end
-
-  if current == float_term_pair.right.win then
-    local target = pair_focus_state.previous_win
-    if not is_valid_win(target) or is_pair_window(target) then
-      target = find_non_pair_window()
+  if current == float_term.win then
+    local target = float_term.previous_win
+    if not is_valid_win(target) or is_float_term_window(target) then
+      target = find_non_float_term_window()
     end
-    close_pair_windows()
+    close_float_terminal()
     if target and is_valid_win(target) then
       vim.api.nvim_set_current_win(target)
     end
     return
   end
 
-  pair_focus_state.previous_win = current
-  focus_pair_window(float_term_pair.left.win)
+  float_term.previous_win = current
+  focus_float_terminal()
 end
 
 local function toggle_diagnostic_virtual_lines()
@@ -229,11 +206,11 @@ map('n', '<C-j>', '<C-w><C-j>', { desc = 'Focus lower window' })
 map('n', '<C-k>', '<C-w><C-k>', { desc = 'Focus upper window' })
 
 -- Quick access
-map('n', '<C-t>', cycle_pair_terminals, { silent = true, desc = 'Cycle pair terminal focus' })
+map('n', '<C-t>', toggle_float_terminal, { silent = true, desc = 'Toggle floating terminal' })
 map('t', '<C-t>', function()
   vim.cmd.stopinsert()
-  cycle_pair_terminals()
-end, { silent = true, desc = 'Cycle pair terminal focus' })
+  toggle_float_terminal()
+end, { silent = true, desc = 'Toggle floating terminal' })
 map('n', '<leader>ww', smart_split, { desc = 'Smart split (auto h/v)' })
 map('n', '<leader>ws', '<C-w>s', { desc = 'Split window horizontally' })
 map('n', '<leader>wv', '<C-w>v', { desc = 'Split window vertically' })
@@ -266,20 +243,20 @@ map('n', '<leader>ud', function()
 end, { desc = '[U]I: [D]ebugging profile' })
 
 vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, {
-  group = vim.api.nvim_create_augroup('config-float-pair-terminal-focus', { clear = true }),
+  group = vim.api.nvim_create_augroup('config-floating-terminal-focus', { clear = true }),
   callback = function(args)
     local buf = args.buf
-    if not is_pair_term_buf(buf) then
+    if not is_float_term_buf(buf) then
       return
     end
 
     vim.schedule(function()
-      if is_pair_term_buf(vim.api.nvim_get_current_buf()) and vim.fn.mode() ~= 't' then
+      if is_float_term_buf(vim.api.nvim_get_current_buf()) and vim.fn.mode() ~= 't' then
         vim.cmd.startinsert()
       end
     end)
   end,
-  desc = 'Always enter terminal mode when focusing float pair terminal',
+  desc = 'Always enter terminal mode when focusing floating terminal',
 })
 
 -- Colemak-style cursor movement
